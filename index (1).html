@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#c22f1b">
+<title>Harga Beli Bakmi Kelinci</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+[hidden]{display:none!important}
+
+/* Layout: bar atas (merek + tab), area kerja satu kolom; panel samping untuk detail/ubah. */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --sunk:#eceee9; --ink:#1c1b19; --muted:#686761; --line:#dfe0da;
+  --accent:#c22f1b; --accent-ink:#ffffff; --accent-soft:#fbe5df;
+  --ok:#1d7a4b; --ok-soft:#e1f2e8; --warn:#a96300; --warn-soft:#fbefd9; --bad:#b3261e; --bad-soft:#fbe3e1; --info:#2a5d9f; --info-soft:#e3ecf8;
+  --shadow:0 10px 30px rgba(30,25,20,.12);
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131312; --surface:#1c1b19; --sunk:#232220; --ink:#ecebe6; --muted:#9e9c95; --line:#2f2e2b;
+  --accent:#f06a4f; --accent-ink:#1a0e0b; --accent-soft:#3b1c16;
+  --ok:#55c78c; --ok-soft:#173226; --warn:#e4a53e; --warn-soft:#352812; --bad:#f27b72; --bad-soft:#3a1b19; --info:#82aee8; --info-soft:#1a2738;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131312; --surface:#1c1b19; --sunk:#232220; --ink:#ecebe6; --muted:#9e9c95; --line:#2f2e2b;
+  --accent:#f06a4f; --accent-ink:#1a0e0b; --accent-soft:#3b1c16;
+  --ok:#55c78c; --ok-soft:#173226; --warn:#e4a53e; --warn-soft:#352812; --bad:#f27b72; --bad-soft:#3a1b19; --info:#82aee8; --info-soft:#1a2738;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+
+/* bar atas */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 13px var(--f-mono)}
+.brand h1{font-size:18px;line-height:1.1}
+.brand small{display:block;font:500 12px var(--f-body);color:var(--muted)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto}
+.tab{border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tab:hover{background:var(--sunk);color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.count{font:600 11px var(--f-mono);background:var(--accent);color:var(--accent-ink);border-radius:20px;padding:1px 7px}
+.count:empty{display:none}
+
+main{padding-block:22px 60px}
+.banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--info-soft);color:var(--info);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:14px}
+.banner b{color:var(--ink)}
+.banner button{margin-left:auto}
+
+/* ringkasan */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left}
+.stat:hover{border-color:var(--muted)}
+.stat .n{font:600 26px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--muted)}
+.stat.on{outline:2px solid var(--ink);outline-offset:-1px}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar .grow{flex:1 1 220px;min-width:0}
+.input,select.input{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 11px;min-height:38px;width:100%}
+.input:focus,button:focus-visible,.stat:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+select.input{width:auto}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 13px;min-height:38px;cursor:pointer;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:none}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:30px;padding:4px 10px;font-size:13px}
+
+/* tabel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font:600 11.5px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface);position:sticky;top:0}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--sunk)}
+td.num,th.num{text-align:right}
+td.kode{font:12.5px var(--f-mono);color:var(--muted);white-space:nowrap}
+td.nama{font-weight:600;min-width:200px}
+.price{font:500 14px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.price.empty{color:var(--muted);font-weight:400}
+.foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 12px var(--f-body);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--ok-soft);color:var(--ok)} .p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--info-soft);color:var(--info)} .p-mute{background:var(--sunk);color:var(--muted)}
+.delta{font:500 12px var(--f-mono)} .up{color:var(--bad)} .down{color:var(--ok)}
+.tag{font-size:12px;color:var(--muted);background:var(--sunk);border-radius:6px;padding:2px 7px;white-space:nowrap}
+
+/* bon masuk */
+.bon-layout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.bon-layout{grid-template-columns:minmax(0,1fr)}}
+.bon-list{display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow:auto}
+.bon-card{border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:12px 14px;cursor:pointer;display:grid;gap:3px}
+.bon-card:hover{background:var(--sunk)} .bon-card.on{background:var(--accent-soft)}
+.bon-card .r1{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.bon-card b{font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bon-card small{color:var(--muted);font-size:12.5px}
+.bon-head{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;padding:16px;border-bottom:1px solid var(--line)}
+.bon-head .meta{flex:1 1 260px;min-width:0;display:grid;gap:6px}
+.bon-head h2{font-size:22px}
+.kv{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)} .kv b{color:var(--ink);font-weight:600}
+.thumb{width:150px;max-width:100%;aspect-ratio:3/4;border-radius:8px;border:1px solid var(--line);background:var(--sunk) center/cover no-repeat;display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;padding:8px;cursor:zoom-in}
+.items td{vertical-align:top}
+.items .nb{font-weight:600}
+.items .sub{font-size:12.5px;color:var(--muted)}
+.items input.input{min-height:32px;padding:5px 8px;font-size:13.5px}
+.items .pick{min-width:230px}
+.items .hp{width:120px;text-align:right;font-family:var(--f-mono)}
+.conf{display:inline-block;width:42px;height:6px;border-radius:4px;background:var(--sunk);vertical-align:middle;overflow:hidden}
+.conf i{display:block;height:100%}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.actions .sp{margin-right:auto;font-size:13px;color:var(--muted)}
+.note{margin:0 16px 14px;font-size:13.5px;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px}
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty-state h3{color:var(--ink);font-size:18px;margin-bottom:6px}
+
+/* panel samping */
+.scrim{position:fixed;inset:0;background:rgba(10,10,10,.35);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:var(--surface);z-index:41;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer .dh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--line)}
+.drawer .dh h2{font-size:20px}
+.drawer .db{padding:16px 18px;overflow:auto;display:grid;gap:14px;align-content:start}
+.drawer .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.field{display:grid;gap:5px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bigprice{font:600 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.hist{display:grid;gap:0}
+.hist div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;align-items:baseline}
+.spark{width:100%;height:70px;display:block}
+.photo-view{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:20px;cursor:zoom-out}
+.photo-view img{max-height:94vh;border-radius:6px}
+
+/* login */
+.login{max-width:380px;margin:8vh auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;gap:14px}
+.login h2{font-size:24px}
+
+/* toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:70;display:grid;gap:8px;width:min(420px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;font-size:14px;box-shadow:var(--shadow)}
+.toast.err{background:var(--bad);color:#fff}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.set-grid .panel{padding:18px;display:grid;gap:12px;align-content:start}
+.set-grid h3{font-size:17px}
+.hint{font-size:13px;color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+@media (max-width:640px){
+  .items thead{display:none}
+  .items tr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:6px 8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .items td{padding:0;border:0;min-width:0}
+  .items td:nth-child(1){grid-row:1/4}
+  .items td:nth-child(2){grid-column:2}
+  .items td:nth-child(5){grid-column:3;grid-row:1}
+  .items td.pick,.items td.num{grid-column:2/4;min-width:0;text-align:left}
+  .items .pick{min-width:0}
+  .items td.num .sub{display:inline;margin-left:8px}
+}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+@media (max-width:560px){.top .wrap{gap:8px}.brand small{display:none}td.kode{display:none}th.kode{display:none}.thumb{width:96px}.bon-head h2{font-size:19px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark">BK</div>
+      <div><h1>Harga Beli Produk</h1><small id="lokasiLbl">Bakmi Kelinci · CK - N1</small></div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="produk" aria-selected="true">Produk</button>
+      <button class="tab" role="tab" data-view="bon">Bon Masuk <span class="count" id="bonCount"></span></button>
+      <button class="tab" role="tab" data-view="riwayat">Riwayat Harga</button>
+      <button class="tab" role="tab" data-view="atur">Pengaturan</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="app"></main>
+<div id="toast"></div>
+<datalist id="dlProduk"></datalist>
+<input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
+<input type="file" id="fileBon" accept="image/*,application/pdf" hidden>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===================== KONFIGURASI =====================
+   Isi ANON_KEY agar aplikasi langsung terhubung tanpa perlu
+   memasukkan apa pun saat dibuka. Kosong = mode contoh.      */
+const CONFIG = {
+  SUPABASE_URL: "https://godxkzmchwgvvvapyhdp.supabase.co",
+  ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZHhrem1jaHdndnZ2YXB5aGRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0OTkxMTUsImV4cCI6MjEwMjA3NTExNX0.vXSVtsz2fJ8VQGWC5610Fc43TUBgvgzuH-ZfAeXKHNA",
+  LOKASI: "CK - N1",
+  FUNCTION: "bon-bot",
+};
+const PRODUK_AWAL = [["isi-029","Acar Cabe","Isian & Produksi Dapur","",null,"kg"],["isi-028","Acar Timun","Isian & Produksi Dapur","",null,"kg"],["KRG-20-120","air mineral - Aqua 600 ml","Bahan Kering & Minuman","",null,"dus"],["KRG-20-001","air mineral - chrystalin 600ml","Bahan Kering & Minuman","",null,"karton"],["KRG-20-002","air mineral - le minerale 600 ml","Bahan Kering & Minuman","",null,"karton"],["ATK-20-029","Akrilik sambal biji","ATK & Cetakan","",null,"pcs"],["MCM-244","akrilik sambel biji","Perlengkapan & Peralatan","",null,"pcs"],["ATK-20-001","Akrilik Uk a5 ( besar )","ATK & Cetakan","",null,"pcs"],["MCM-001","alat peras jeruk","Perlengkapan & Peralatan","",null,"pcs"],["ORD-30-001","alpukat","Bahan Order","",null,"kg"],["KRG-20-004","anchnor unsalted R@kg","Bahan Kering & Minuman","",null,"kg"],["ORD-30-002","Ayam MTG","Bahan Order","",null,"Porsi"],["BK-0001","BAKMI CHILI BK","Menu & Paket","",null,"Porsi"],["mcm-242","bak segi k","Perlengkapan & Peralatan","",null,"pcs"],["ISI-001","bakso goreng","Isian & Produksi Dapur","",null,"pcs"],["ORD-30-003","bakso ikan","Bahan Order","",null,"pcs"],["ORD-30-004","bakso sapi","Bahan Order","",null,"pcs"],["MCM-003","balon sablon","Perlengkapan & Peralatan","",null,"pcs"],["mcm-240","bando natal","Perlengkapan & Peralatan","",null,"pcs"],["mcm-228","baskom bulat besar","Perlengkapan & Peralatan","",null,"pcs"],["MCM-004","baskom kotak B","Perlengkapan & Peralatan","",null,"pcs"],["MCM-005","baskom kotak K","Perlengkapan & Peralatan","",null,"pcs"],["MCM-006","baskom u/ fyunghay (K)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-007","batu asahan","Perlengkapan & Peralatan","",null,"buah"],["SYR-15-001","bawang merah","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-002","bawang putih","Sayur & Bumbu Segar","",null,"kg"],["MCM-009","Bayclin","Perlengkapan & Peralatan","",null,"btl"],["MCM-010","baygon","Perlengkapan & Peralatan","",null,"btl"],["MCM-011","bel pesenan","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-003","beras","Sayur & Bumbu Segar","",null,"kg"],["Mess-20-159","beras ketan item","Makan Karyawan (Mess)","",null,"kg"],["KRG-20-160","bihun hong perbks","Bahan Kering & Minuman","",null,"bks"],["KRG-20-166","blueband perkg","Bahan Kering & Minuman","",null,"kg"],["MCM-014","bolpoin","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-004","bombay","Sayur & Bumbu Segar","",null,"kg"],["MCM-017","botol (B)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-018","botol (k)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-015","botol kecap asin","Perlengkapan & Peralatan","Alfa",20000.0,"btl"],["MCM-016","botol lada halus","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-008","bowl","Bahan Kering & Minuman","",null,"pcs"],["SYR-15-005","brokoli","Sayur & Bumbu Segar","",null,"kg"],["ISI-002","buah atap","Isian & Produksi Dapur","",null,"kg"],["KRG-20-010","bubuk kayu manis","Bahan Kering & Minuman","",null,"btl"],["ATK-20-002","buku orderan","ATK & Cetakan","",null,"pcs"],["MCM-019","buku tulis","Perlengkapan & Peralatan","",null,"pcs"],["ATK-20-003","Buku tulis Besar","ATK & Cetakan","",null,"pcs"],["ISI-003","bumbu capcay","Isian & Produksi Dapur","",null,"kg"],["ISI-0028","Bumbu Mie Karet","Isian & Produksi Dapur","",null,"kg"],["ISI-004","bumbu nasi goreng","Isian & Produksi Dapur","",null,"kg"],["SYR-15-006","cabe merah besar","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-008","cabe rawit hijau","Sayur & Bumbu Segar","",null,"kg"],["MCM-020","cable ties","Perlengkapan & Peralatan","",null,"pack"],["SYR-15-011","caisim","Sayur & Bumbu Segar","",null,"kg"],["MCM-022","centong kayu","Perlengkapan & Peralatan","",null,"pcs"],["MCM-023","cetakan ifumi","Perlengkapan & Peralatan","",null,"pcs"],["ORD-30-005","cincau hitam","Bahan Order","",null,"ptg"],["mcm-239","clemek depan","Perlengkapan & Peralatan","",null,"pcs"],["MCM-025","cobek+muntu","Perlengkapan & Peralatan","",null,"pasang"],["KRG-20-013","coklat van houten","Bahan Kering & Minuman","",null,"bks"],["MCM-026","Daftar Menu","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-012","daun Bawang Besar(sop)","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-013","daun Bawang Kecil","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-014","daun mint","Sayur & Bumbu Segar","",null,"ikt"],["SYR-15-015","daun pandan","Sayur & Bumbu Segar","",null,"kg"],["MCM-031","dekorasi ramadhan(kuncit)","Perlengkapan & Peralatan","",null,"paket"],["KRG-098","eco bag bk","Bahan Kering & Minuman","",null,"pcs"],["ISI-005","emping manis - dapur","Isian & Produksi Dapur","",null,"bks"],["ISI-005D","emping pedas - dapur","Isian & Produksi Dapur","",null,"bks"],["MCM-036","filter air sumur(RA)","Perlengkapan & Peralatan","",null,"pcs"],["FREE-001","Free Mug BK dengan Pembelian Min. 500rb","Promo & Merchandise","",null,"pcs"],["PRO-239","Free Pangsit Goreng 3 Pcs","Promo & Merchandise","",null,"Porsi"],["FREE-002","Free Pulpen BK dengan Order Min. Rp. 150.000","Promo & Merchandise","",null,"pcs"],["KRG-20-018A","Garam","Bahan Kering & Minuman","",null,"bks"],["MCM-039","garpu makan","Perlengkapan & Peralatan","",null,"lusin"],["MCM-037","garpu plastik","Perlengkapan & Peralatan","",null,"pcs"],["PMB-006","gayung bakso stainless","Perlengkapan Outlet Baru","",null,"pcs"],["MCM-042","gelas esteh","Perlengkapan & Peralatan","",null,"lusin"],["MCM-231","gelas jus/lusin","Perlengkapan & Peralatan","",null,"lusin"],["MCM - 223","gelas karyawan","Perlengkapan & Peralatan","",null,"pcs"],["MCM-041","gelas mug stanles","Perlengkapan & Peralatan","",null,"pcs"],["MCM-168D","gelas plastik pcs","Perlengkapan & Peralatan","",null,"pcs"],["mcm-237","gelas teh panas","Perlengkapan & Peralatan","",null,"lusin"],["MCM-043","gelas ukur","Perlengkapan & Peralatan","",null,"pcs"],["MCM-044","gelas ukur 2 liter","Perlengkapan & Peralatan","",null,"pcs"],["MCM-045","gorden dapur hitam","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-017","gula pasir","Bahan Kering & Minuman","",null,"kg"],["KRG-20-018","gula pasir/sachet","Bahan Kering & Minuman","",null,"pcs"],["ATK-20-030","gunting","ATK & Cetakan","",null,"pcs"],["ORD-30-006","gurame","Bahan Order","",null,"ekor"],["BK-229","Hot / Ice Coklat","Menu & Paket","",null,"Porsi"],["ISI-006","isian ayam","Isian & Produksi Dapur","",null,"kg"],["isi-030","isian ayam chili","Isian & Produksi Dapur","",null,"kg"],["ISI-007","isian ayam nanking","Isian & Produksi Dapur","",null,"Porsi"],["ISI-008","isian ayam polos","Isian & Produksi Dapur","",null,"Porsi"],["ISI-009","isian bistik ayam","Isian & Produksi Dapur","",null,"Porsi"],["ISI-010","isian bistik sapi","Isian & Produksi Dapur","",null,"Porsi"],["ISI-011","isian capcay","Isian & Produksi Dapur","",null,"Porsi"],["ISI-012","isian fuyughai","Isian & Produksi Dapur","",null,"Porsi"],["ISI-013","isian ikan asin","Isian & Produksi Dapur","",null,"Porsi"],["ISI-014","isian jamur","Isian & Produksi Dapur","",null,"kg"],["ISI-015","isian kakap","Isian & Produksi Dapur","",null,"Porsi"],["ISI-017","isian nasgor","Isian & Produksi Dapur","",null,"Porsi"],["ISI-018","isian pangsit","Isian & Produksi Dapur","",null,"kg"],["ISI-019","isian sapi goreng","Isian & Produksi Dapur","",null,"Porsi"],["ISI-020","isian sapi polos","Isian & Produksi Dapur","",null,"Porsi"],["ISI-021","isian seafood","Isian & Produksi Dapur","",null,"Porsi"],["ISI-022","isian suikiaw","Isian & Produksi Dapur","",null,"kg"],["ATK-20-020","Isi solatip","ATK & Cetakan","",null,"pcs"],["MCM-048","isi staples","Perlengkapan & Peralatan","",null,"pack"],["SYR-15-016","jagung muda","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-017","jahe/kg","Sayur & Bumbu Segar","",null,"kg"],["KRG-20-019","jamur hiyoko/kg","Bahan Kering & Minuman","",null,"kg"],["ORD-30-007","jamur kokian","Bahan Order","",null,"kg"],["MCM-258","Jebakan kecoa","Perlengkapan & Peralatan","",null,"pcs"],["MCM-230","jepitan pangsit GR","Perlengkapan & Peralatan","",null,"pcs"],["MCM-049","jepitan u/ bon 1 lusin","Perlengkapan & Peralatan","",null,"bks"],["MCM-050","jerigen bumbu u/moi","Perlengkapan & Peralatan","",null,"jrg"],["ORD-30-008","jeruk","Bahan Order","",null,"kg"],["SYR-15-018","jeruk limau","Sayur & Bumbu Segar","",null,"kg"],["ORD-30-009","Kacang ijo mateng","Bahan Order","",null,"kg"],["KRG-20-106","Kacang pedes","Bahan Kering & Minuman","",null,"bks"],["ORD-30-010","kacang polong/kg","Bahan Order","",null,"kg"],["SYR-15-019","kailan","Sayur & Bumbu Segar","",null,"kg"],["MCM-145A","Kamper Toilet","Perlengkapan & Peralatan","",null,"pack"],["MCM-051","kanebo","Perlengkapan & Peralatan","",null,"pcs"],["MCM-053","kaos hitam","Perlengkapan & Peralatan","",null,"pcs"],["MCM-220R","karbol","Perlengkapan & Peralatan","",null,"btl"],["MCM-054","karet gelang 1/4","Perlengkapan & Peralatan","",null,"bks"],["MCM-055","kasur","Perlengkapan & Peralatan","",null,"pcs"],["MCM-056","kawat u/rebusan mie","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-029R","kecap bakmian","Bahan Kering & Minuman","",null,"btl"],["KRG-20-022","kecap bango","Bahan Kering & Minuman","Alfa",10000.0,"bks"],["KRG-20-023","kecap benteng / istana","Bahan Kering & Minuman","",null,"btl"],["KRG-20-025","kecap matahari","Bahan Kering & Minuman","",null,"btl"],["KRG-20-026","keju cedar 2kg@pcs","Bahan Kering & Minuman","",null,"bks"],["ORD-30-022","kelapa muda/kg","Bahan Order","",null,"kg"],["SYR-15-020","kembang kol","Sayur & Bumbu Segar","",null,"kg"],["MCM-052","Kemeja Merah","Perlengkapan & Peralatan","",null,"pcs"],["MCM-057","kemoceng","Perlengkapan & Peralatan","",null,"pcs"],["MCM-058","keranjang kotak sdeng","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-117","kertas gulung bakmi","Bahan Kering & Minuman","",null,"kg"],["MCM-061","kertas nasi per pack","Perlengkapan & Peralatan","",null,"pack"],["ATK-20-006","Kertas order BM","ATK & Cetakan","",null,"pcs"],["20-020","Kertas print Absen bulanan","ATK & Cetakan","",null,"pcs"],["ATK-20-019","Kertas print PC/Tukar bon","ATK & Cetakan","",null,"pcs"],["KRG-20-168","Kertas SOP/Ceklis harian","Bahan Kering & Minuman","",null,"pcs"],["MCM-008","Kerudung hitam","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-034D","Kerupuk kulit ikan - dapur","Bahan Kering & Minuman","",null,"pack"],["KRG-20-035D","Kerupuk sanggul - dapur","Bahan Kering & Minuman","",null,"pack"],["mcm-229","kesed","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-021","kol","Sayur & Bumbu Segar","",null,"kg"],["BK-225","KOPEL Hitam ( Kopi Telur)","Menu & Paket","",null,"Porsi"],["BK-226","KOPEL Susu ( Kopi Telur Susu )","Menu & Paket","",null,"Porsi"],["KRG-20-105","Kopi bubuk hitam @ 500 gram","Bahan Kering & Minuman","",null,"pack"],["MCM-062","korek gas","Perlengkapan & Peralatan","",null,"pcs"],["mcm-234","krans natal(bntuk bulat)","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-112","Krupuk Palembang - Dapur","Bahan Kering & Minuman","",null,"bks"],["SYR-15-022","kucai","Sayur & Bumbu Segar","",null,"kg"],["MIE-20-008R","Kulit Bulat Swekiau - dapur","Mie & Kulit","",null,"bks"],["MIE-20-001","kulit tebal : 1/2kg/bks","Mie & Kulit","",null,"bks"],["MIE-20-002","kulit tipis","Mie & Kulit","",null,"bks"],["MCM-063","kupasan wortel","Perlengkapan & Peralatan","",null,"pcs"],["ORD-30-012","kurma 1kg","Bahan Order","",null,"kg"],["MCM-064","kursi basko","Perlengkapan & Peralatan","",null,"pcs"],["MIE-20-003","kwetiau per bungkus","Mie & Kulit","",null,"bks"],["KRG-20-031","lada /kg","Bahan Kering & Minuman","",null,"kg"],["ATK-20-004","laminating Sop","ATK & Cetakan","",null,"pcs"],["MCM-065","Lampu bohlam","Perlengkapan & Peralatan","",null,"pcs"],["MCM-150","lampu halal","Perlengkapan & Peralatan","",null,"pcs"],["MCM-067","lap dapur (hijau)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-068","lap kuali/cempal","Perlengkapan & Peralatan","",null,"pcs"],["MCM-069","lap meja (biru)","Perlengkapan & Peralatan","",null,"pcs"],["PMB-012","lap merah(meja kering)","Perlengkapan Outlet Baru","",null,"pcs"],["MCM-070","lap sendok (orens)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-071","lem lalat","Perlengkapan & Peralatan","",null,"bks"],["KRG-20-032","lemon tea","Bahan Kering & Minuman","",null,"bks"],["MCM-123","lem tikus","Perlengkapan & Peralatan","",null,"pcs"],["MCM-072","lion star bundar sw73","Perlengkapan & Peralatan","",null,"pcs"],["MCM-073","lion star kotak B48","Perlengkapan & Peralatan","",null,"pcs"],["MIE-20-004","lochupan per bungkus","Mie & Kulit","",null,"bks"],["MCM-066","lunch box","Perlengkapan & Peralatan","",null,"pcs"],["MCM-074","magic com besar(philip)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-075","Mainan - rubber rabbit","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-034","maizena","Bahan Kering & Minuman","",null,"bks"],["MCM-249","mangkok es campur plastik","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-042A","Mangkok Kuah Plastik","Bahan Kering & Minuman","",null,"pcs"],["atk","map bening","ATK & Cetakan","",null,"pcs"],["MCM-214A","Masker Koki - plastik","Perlengkapan & Peralatan","",null,"pcs"],["mcm-224","mesin serut es","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-035","mesis coklat","Bahan Kering & Minuman","",null,"kg"],["Mess-20-002","mess - agar-agar warna","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-003","mess - asam jawa/bks","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-004","mess - ati ampela/pasang","Makan Karyawan (Mess)","",null,"pasang"],["Mess-20-005","mess - ayam tkk","Makan Karyawan (Mess)","",null,"ekor"],["Mess-20-032","mess - bandeng/bawal presto","Makan Karyawan (Mess)","",null,"ekor"],["Mess-20-007","mess - bawang merah","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-008","mess - bayam","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-009","mess - bengkuang","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-010","mess - bihun jagung","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-011","mess - blewah","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-012","mess - buah atep mentah","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-013","mess - bumbu dapur 1 kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-006","mess - Bumbu racik s. asem","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-131","mess - bumbu rndng/opor","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-014","mess - buncis","Makan Karyawan (Mess)","",null,"kg"],["mess-20-155","mess - cabe campur kryawan","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-015","mess - cabe ijo Besar","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-016","mess - cabe ijo kriting","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-017","mess - cabe merah keriting","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-018","mess - cabe rawit hijau","Makan Karyawan (Mess)","",null,"kg"],["SYR-15-009","mess - cabe rawit merah","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-065","mess - ceker kry/kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-020","mess - cincau item krywn","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-025","mess - daun cuciwis","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-156","Mess-Daun labu","Makan Karyawan (Mess)","",null,"ikt"],["mess-20-150","mess-daun mlinjo","Makan Karyawan (Mess)","",null,"kg"],["20-481","mess-daun pakis","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-023","mess - daun pandan/kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-024","mess - daun singkong","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-139A","mess-galon Isi Ulang","Makan Karyawan (Mess)","",null,"btl"],["Mess-20-027","mess - genjer","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-033","mess - ikan bawal","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-034","mess - ikan cue per ekor","Makan Karyawan (Mess)","",null,"ekor"],["Mess-20-035","mess - ikan kembung /kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-036","mess - ikan lele","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-039","mess - ikan mas","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-037","mess - ikan mujair/nila","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-038","mess - ikan selar","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-040","mess - Ikan tongkol/belah","Makan Karyawan (Mess)","",null,"belah"],["Mess-20-041","mess - imboost 1 btl","Makan Karyawan (Mess)","",null,"btl"],["Mess-20-043","mess - Indomie kuah/goreng","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-044","mess - jagung manis","Makan Karyawan (Mess)","",null,"buah"],["20-048","mess - jamur kuping","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-047","mess - jamur putih/tiram","Makan Karyawan (Mess)","",null,"kg"],["20-049","mess-Jantung","Makan Karyawan (Mess)","",null,"buah"],["Mess-20-022","mess - jeruk nipis","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-051","mess - kacang panjang","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-052","mess - kacang tanah","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-053","mess - kangkung psr snen","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-143","mess - kecipir","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-055","mess - kecombrang/biji","Makan Karyawan (Mess)","",null,"buah"],["Mess-20-056","mess - kelapa parut","Makan Karyawan (Mess)","",null,"butir"],["Mess-20-057","mess - kemangi","Makan Karyawan (Mess)","",null,"ikt"],["Mess-20-058","mess - kemiri/kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-059","mess - kencur/kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-060","mess - kentang","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-061","mess - ketumbar 1 kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-074","mess - ketupat","Makan Karyawan (Mess)","",null,"pcs"],["Mess-20-062","mess - kikil","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-068","mess - kwetiau","Makan Karyawan (Mess)","",null,"bks"],["mess-145","mess-labu air/kukuk","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-069","mess - labu kecil","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-070","mess - labu siam","Makan Karyawan (Mess)","",null,"kg"],["20-160","Mess-Lalapan","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-071","mess - lenca","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-073","mess - masker","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-077","mess - mie burung dara","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-078","mess - mie kuning","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-079","mess - nangka sayur","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-081","mess - oncom","Makan Karyawan (Mess)","",null,"pcs"],["Mess-20-082","mess - otak-otak","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-083","mess - oyong","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-084","mess - pacar cina","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-085","mess - pakcoy","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-086","mess - pare","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-087","mess - pepaya mateng","Makan Karyawan (Mess)","",null,"kg"],["mess-20-149","mess - pepaya muda","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-021","mess - pepaya serut","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-093","mess - rebung","Makan Karyawan (Mess)","",null,"kg"],["20-161","mess-rujakan","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-096","mess - santan kara/bks","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-099","mess - sayap ayam","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-100","mess - sayur asem","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-101","mess - selada","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-103","mess - singkong per kg","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-105","mess - sirup marjan","Makan Karyawan (Mess)","",null,"btl"],["Mess-20-106","mess - sop sopan/bks","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-108","mess - soun","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-110","mess - tahu goreng/coklat","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-111","mess - tahu kuning/putih B","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-113","mess - tahu pth/kng kecil","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-114","mess - tape","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-116","mess - telur asin","Makan Karyawan (Mess)","",null,"butir"],["Mess-20-117","mess - tempe","Makan Karyawan (Mess)","",null,"ptg"],["Mess-20-119","mess - terasi/bks","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-120","mess - terigu","Makan Karyawan (Mess)","",null,"bks"],["Mess-20-030","mess - teri jengki","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-121","mess - terong bulet","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-122","mess - terong ungu","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-123","mess - tetelan sapi","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-125","mess - timun suri","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-126","mess - toge","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-127","mess - toge kedelai","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-128","mess - tomat","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-129","mess - ubi","Makan Karyawan (Mess)","",null,"kg"],["Mess-20-133","mess - udang rebon","Makan Karyawan (Mess)","",null,"bks"],["KRG-20-036","micin","Bahan Kering & Minuman","",null,"bks"],["MIE-20-005M","Mie Ayam - FR","Mie & Kulit","",null,"pcs"],["MIE-20-011","Mie ayam SK per kg","Mie & Kulit","",null,"kg"],["MIE-20-006M","Mie Goreng - dapur","Mie & Kulit","",null,"kg"],["MIE-20-012","Mie Karet per kg","Mie & Kulit","",null,"kg"],["MIE-20-010","Mie lebar per kg","Mie & Kulit","",null,"kg"],["BK-212","MIE PANGSIT REBUS (1,5)","Menu & Paket","",null,"Porsi"],["BK-301","Mie Yamien","Menu & Paket","",null,"Porsi"],["PMB-023","mika besar/ pack","Perlengkapan Outlet Baru","",null,"pack"],["PMB-003","mika sedang/ pack","Perlengkapan Outlet Baru","",null,"pack"],["KRG-20-037","milo /bks","Bahan Kering & Minuman","",null,"bks"],["ORD-30-013","minyak ayam","Bahan Order","",null,"kg"],["KRG-20-038","minyak goreng @1 literan","Bahan Kering & Minuman","",null,"liter"],["KRG-20-040","minyak wijen / mayu","Bahan Kering & Minuman","",null,"btl"],["MBK-001","Mug BK","Promo & Merchandise","",null,"pcs"],["MCM-248","MUG BK N1","Perlengkapan & Peralatan","",null,"pcs"],["MCM-221R","muntu","Perlengkapan & Peralatan","",null,"pcs"],["MCM-079","name tag","Perlengkapan & Peralatan","",null,"pcs"],["ORD-30-014","nanas","Bahan Order","",null,"buah"],["ORD-30-015","nangka / 250 gram","Bahan Order","",null,"bks"],["BK-1001","Nasi Bistik Ayam","Menu & Paket","",null,"Porsi"],["ISI-023","nasi tim - dapur","Isian & Produksi Dapur","",null,"Porsi"],["mcm-225","nomor meja","Perlengkapan & Peralatan","",null,"pcs"],["MCM-077","Ongkos motor (BM/orang)","Perlengkapan & Peralatan","",null,"biaya"],["PMB-002","outlet baru -cable ties","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-004","outlet baru -duble tip","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-005","outlet baru -ember tutup","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-007","outlet baru -isi solatip","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-008","outlet baru -isi staples","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-009","outlet baru -kesed","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-010","outlet baru -lap dapur (hijau)","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-011","outlet baru -lap kuali/cempal","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-013","outlet baru -lap meja (biru)","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-014","outlet baru -lap sendok (orens)","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-015","outlet baru -pel pelan","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-016","outlet baru -pengki","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-017","outlet baru -pensil","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-018","outlet baru -prostek","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-019","outlet baru -sapu","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-020","outlet baru -sapu kuali","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-021","outlet baru -sikat lantai gagang panjang","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-022","outlet baru -spidol hitam/biru","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-024","outlet baru -staples","Perlengkapan Outlet Baru","",null,"pcs"],["PMB-025","outlet baru -wiper/serokan air","Perlengkapan Outlet Baru","",null,"pcs"],["BK-227","PAKET Hot Coklat + Roti Jadoel","Menu & Paket","",null,"Porsi"],["MCM-105","panci uk 34 cm","Perlengkapan & Peralatan","",null,"pcs"],["MCM-106","panci uk 36","Perlengkapan & Peralatan","",null,"pcs"],["BK-0002","Pangsit Chili BK","Menu & Paket","",null,"Porsi"],["MCM-083","paper cup","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-126","paper lunch basgor","Bahan Kering & Minuman","",null,"pcs"],["KRG-20-128","Paper lunch (M)","Bahan Kering & Minuman","",null,"pcs"],["SYR-15-023","paprika(cabe bandung)","Sayur & Bumbu Segar","",null,"kg"],["MCM-109","Pel pelan","Perlengkapan & Peralatan","",null,"pcs"],["MCM-110","pengki","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-024","pete","Sayur & Bumbu Segar","",null,"Porsi"],["MCM-113","pin I am new","Perlengkapan & Peralatan","",null,"pcs"],["MCM-084","piring acar plastik/bks@100","Perlengkapan & Peralatan","",null,"bks"],["MCM-118","pisau dapur","Perlengkapan & Peralatan","",null,"pcs"],["MCM-119","pita printer","Perlengkapan & Peralatan","",null,"pcs"],["MCM-085","plastik bakso 20x35","Perlengkapan & Peralatan","",null,"bks"],["MCM-086","plastik ifumie 25x40","Perlengkapan & Peralatan","",null,"bks"],["MCM-087","plastik klip bsar 10x6 @bks","Perlengkapan & Peralatan","",null,"bks"],["MCM-088","plastik klip kcil 6X4@pak","Perlengkapan & Peralatan","",null,"pack"],["MCM-089","plastik kuah 12x25","Perlengkapan & Peralatan","",null,"bks"],["MCM-090","plastik lembaran 25x35","Perlengkapan & Peralatan","",null,"bks"],["krg-20-121","plastik merah tiger 40cm","Bahan Kering & Minuman","",null,"bks"],["MCM-091","plastik sampah","Perlengkapan & Peralatan","",null,"bks"],["MCM-093","Plastik sarung tangan","Perlengkapan & Peralatan","",null,"bks"],["MCM-094","plastik sendok","Perlengkapan & Peralatan","",null,"bks"],["MCM-095","plastik tk besar 28 cm","Perlengkapan & Peralatan","",null,"bks"],["MCM-096","plastik tk sedang 24 cm","Perlengkapan & Peralatan","",null,"bks"],["MCM-097","plastik tomat 30x45","Perlengkapan & Peralatan","",null,"bks"],["MCM-098","plastik tomat 40x60","Perlengkapan & Peralatan","",null,"bks"],["MCM-099","Plastik utk gelas","Perlengkapan & Peralatan","",null,"bks"],["mcm-235","pohon natal mini","Perlengkapan & Peralatan","",null,"pcs"],["mcm-236","pohon natal sedang","Perlengkapan & Peralatan","",null,"pcs"],["MCM-120","pompa balon","Perlengkapan & Peralatan","",null,"pcs"],["MCM-121","printer bluetooth","Perlengkapan & Peralatan","",null,"pcs"],["ATK-20-007","print matikan listrik","ATK & Cetakan","",null,"pcs"],["ATK-20-008","printnan jaga barang bawaan anda","ATK & Cetakan","",null,"pcs"],["ATK-20-021","printnan porsian BK","ATK & Cetakan","",null,"pcs"],["ATK-20-005","print susunan BM BK","ATK & Cetakan","",null,"pcs"],["MCM-122","prostek 1 ltr","Perlengkapan & Peralatan","",null,"btl"],["MCM-124","refil bayfresh","Perlengkapan & Peralatan","",null,"pcs"],["MCM-246","Refil korek gas","Perlengkapan & Peralatan","",null,"btl"],["MCM-125","Roll Banner","Perlengkapan & Peralatan","",null,"pcs"],["BK-220","Roti Jadoel","Menu & Paket","",null,"Porsi"],["BK-221","Roti Jadoel Butter Sugar","Menu & Paket","",null,"Porsi"],["BK-223","Roti Jadoel Meises atau Keju","Menu & Paket","",null,"Porsi"],["BK-224","Roti Jadoel Meises & Keju","Menu & Paket","",null,"Porsi"],["BK-222","Roti Jadoel Srikaya","Menu & Paket","",null,"Porsi"],["KRG-20.027","Royco ayam","Bahan Kering & Minuman","",null,"bks"],["ATK-20-018","Rumah solatip","ATK & Cetakan","",null,"pcs"],["RNCHS-004","Runchise Agustus'23 (Bulus)","Biaya Runchise","",null,"biaya"],["RNCHS-005","Runchise Agustus'23 (Kuncit)","Biaya Runchise","",null,"biaya"],["RNCHS-006","Runchise Agustus'23 (Moi)","Biaya Runchise","",null,"biaya"],["RNCHS-007","Runchise Agustus'23 (RA)","Biaya Runchise","",null,"biaya"],["RNCHS-003","Runchise juni'23 (Ambas)","Biaya Runchise","",null,"biaya"],["RNCHS-001","Runchise juni'23 (Artha Gading)","Biaya Runchise","",null,"biaya"],["RNCHS-002","Runchise juni'23 (Atrium)","Biaya Runchise","",null,"biaya"],["RNCHS-009","Runchise September'23 (Pesanggrahan)","Biaya Runchise","",null,"biaya"],["RNCHS-008","Runchise September'23 (Veteran)","Biaya Runchise","",null,"biaya"],["MCM-103","sabun colek/ bks","Perlengkapan & Peralatan","",null,"bks"],["MCM-101","sabun C.P 1 jrg(K)","Perlengkapan & Peralatan","",null,"jrg"],["MCM-186R","sabun cuci tangan - refill","Perlengkapan & Peralatan","",null,"bks"],["KRG-20-041","sagu","Bahan Kering & Minuman","",null,"kg"],["SYR-15-010","sambel biji mateng","Sayur & Bumbu Segar","",null,"kg"],["KRG-20-113","Sambel Chili oil/bks 500 gr","Bahan Kering & Minuman","",null,"bks"],["ISI-024","saos asam manis","Isian & Produksi Dapur","",null,"kg"],["ISI-025","saos lada hitam","Isian & Produksi Dapur","",null,"kg"],["ISI-026","saos mentega","Isian & Produksi Dapur","",null,"kg"],["ISI-027","saos pangsit","Isian & Produksi Dapur","",null,"kg"],["KRG-20-045","saos sambal gourmet","Bahan Kering & Minuman","",null,"bks"],["KRG-20-157","Saos tiram botol","Bahan Kering & Minuman","",null,"btl"],["KRG-20-047","saos tomat abc","Bahan Kering & Minuman","",null,"bks"],["ORD-30-016","sapo tahu jepang","Bahan Order","",null,"ptg"],["MCM-126","sapu","Perlengkapan & Peralatan","",null,"pcs"],["MCM-127","sapu kuali","Perlengkapan & Peralatan","",null,"pcs"],["MCM-128","Sapu lidi","Perlengkapan & Peralatan","",null,"pcs"],["MCM-129","sarang nasi kain","Perlengkapan & Peralatan","",null,"pcs"],["MCM-130","saringan bakmie","Perlengkapan & Peralatan","",null,"pcs"],["mcm-247","saringan kopi kain","Perlengkapan & Peralatan","",null,"pcs"],["mcm-245","saringan/serokan minyak","Perlengkapan & Peralatan","",null,"pcs"],["MCM-212R","sarung tangan kain","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-025","sawi putih","Sayur & Bumbu Segar","",null,"kg"],["KRG-20-048","sedotan","Bahan Kering & Minuman","",null,"bks"],["KRG-20-049","selai srikaya 2kg@pcs","Bahan Kering & Minuman","",null,"bks"],["SYR-15-026","seledri","Sayur & Bumbu Segar","",null,"kg"],["mcm-227","semprotan meja","Perlengkapan & Peralatan","",null,"pcs"],["MCM-133","sendok makan","Perlengkapan & Peralatan","",null,"lusin"],["KRG-20-050","sendok plastik","Bahan Kering & Minuman","",null,"pcs"],["MCM-204R","sendok takar 15 gram","Perlengkapan & Peralatan","",null,"pcs"],["MCM-046","sendok takar isi ayam","Perlengkapan & Peralatan","",null,"pcs"],["MCM-156","Sepatu hitam anak belakang","Perlengkapan & Peralatan","",null,"pcs"],["MCM-134R","serabut kawat 1 pcs","Perlengkapan & Peralatan","",null,"bks"],["MCM-105R","seragam koki - hitam","Perlengkapan & Peralatan","",null,"pcs"],["MCM-188R","seragam koki - hitam uk khusus","Perlengkapan & Peralatan","",null,"pcs"],["MCM-104","seragam waiter biru","Perlengkapan & Peralatan","",null,"pcs"],["MCM-138","sikat botol","Perlengkapan & Peralatan","",null,"pcs"],["MCM-140","sikat kayu/baju","Perlengkapan & Peralatan","",null,"pcs"],["MCM-141","sikat lantai gagang panjang","Perlengkapan & Peralatan","",null,"pcs"],["MCM-139","sikat WC","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-052","sirup bango","Bahan Kering & Minuman","",null,"btl"],["KRG-20-053","SKM coklat","Bahan Kering & Minuman","",null,"klg"],["KRG-20-054","SKM putih","Bahan Kering & Minuman","",null,"klg"],["MCM-142","slempang ramadhan","Perlengkapan & Peralatan","",null,"pcs"],["MCM-143","soda api /bks","Perlengkapan & Peralatan","",null,"bks"],["KRG-20-084A","soda botolan","Bahan Kering & Minuman","",null,"btl"],["MCM-144","sodet B","Perlengkapan & Peralatan","",null,"pcs"],["MCM-145","spidol hitam/biru","Perlengkapan & Peralatan","",null,"pcs"],["MCM-146","Spons kasar","Perlengkapan & Peralatan","",null,"pcs"],["ATK-20-009","stabilo(joyko)","ATK & Cetakan","",null,"pcs"],["MCM-147","staples","Perlengkapan & Peralatan","",null,"pcs"],["MCM-149","Stiker daftar menu per paket","Perlengkapan & Peralatan","",null,"paket"],["MCM-151","Stiker kelinci bordir","Perlengkapan & Peralatan","",null,"pcs"],["mcm-243","stiker merry cristmas","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-122","Sumpit @50pcs","Bahan Kering & Minuman","",null,"bks"],["MCM-152","sumpit hitam/bks@10pcs","Perlengkapan & Peralatan","",null,"bks"],["KRG-20-060","super pel/karbol per jrg","Bahan Kering & Minuman","",null,"jrg"],["KRG-20-085","Sup jagung","Bahan Kering & Minuman","",null,"klg"],["MCM-036A","Tabung Gas Isi","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-165","Tabung gas pink","Bahan Kering & Minuman","",null,"pcs"],["ORD-30-017","tahu medan/putih B","Bahan Order","",null,"ptg"],["ORD-30-018","tape","Bahan Order","",null,"kg"],["MCM-153","tapon anti sumbat","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-061","tausi","Bahan Kering & Minuman","",null,"klg"],["KRG-20-012","Teh olong (chineese tea)","Bahan Kering & Minuman","",null,"bks"],["KRG-20-062","teh pucuk per karton","Bahan Kering & Minuman","",null,"dus"],["KRG-20-127","teh pucuk per pcs","Bahan Kering & Minuman","",null,"pcs"],["KRG-20-063","teh tongji celup","Bahan Kering & Minuman","",null,"bks"],["MCM-154","teko kecil","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-027","telur","Sayur & Bumbu Segar","",null,"kg"],["BK-228","Telur Kampung 1/2 Matang","Menu & Paket","",null,"Porsi"],["MCM-259","Tempat tissue","Perlengkapan & Peralatan","",null,"pcs"],["ATK-20-011","tempelan kaca(RA)","ATK & Cetakan","",null,"pcs"],["KRG-20-116","Tepung Biru (A.Nanking)","Bahan Kering & Minuman","",null,"kg"],["KRG-20-114","Tepung Hijau (tahu,fyhy,ikan,bstik,klyuk)","Bahan Kering & Minuman","",null,"kg"],["KRG-20-115","Tepung Merah (A.MTG)","Bahan Kering & Minuman","",null,"kg"],["mcm-226","termos air panas","Perlengkapan & Peralatan","",null,"pcs"],["KRG-20-094","Thermal pink 2 ply/pack","Bahan Kering & Minuman","",null,"pack"],["KRG-20-095","Thermal putih/pack","Bahan Kering & Minuman","",null,"pack"],["TW-2024-001","Thinwall","Kemasan","",null,"pcs"],["MCM-155","tiang balon pak Yo","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-028","timun","Sayur & Bumbu Segar","",null,"kg"],["ATK-1122","Tip-X atau Correction Tape","ATK & Cetakan","",null,"pcs"],["MCM-157","tissue kotak kecil","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-030","TL mentah u/ kaldu","Sayur & Bumbu Segar","",null,"kg"],["SYR-15-029","toge","Sayur & Bumbu Segar","",null,"kg"],["KRG-20-067","tong cai","Bahan Kering & Minuman","",null,"bks"],["mcm-241","tong sampah k","Perlengkapan & Peralatan","",null,"pcs"],["MCM-159","topi biru","Perlengkapan & Peralatan","",null,"bks"],["MCM-160","topi hitam","Perlengkapan & Peralatan","",null,"pcs"],["MCM-161","topi kerja wanita","Perlengkapan & Peralatan","",null,"pcs"],["MCM-162","topi natal","Perlengkapan & Peralatan","",null,"pcs"],["MCM-238","Toples chili oil","Perlengkapan & Peralatan","",null,"pcs"],["MCM-163","toples ifumi terbang","Perlengkapan & Peralatan","",null,"pcs"],["MCM-164","toples kotak","Perlengkapan & Peralatan","",null,"pcs"],["MCM-165","toples pangsit goreng","Perlengkapan & Peralatan","",null,"pcs"],["MCM-170","tp link(wifi)","Perlengkapan & Peralatan","",null,"pcs"],["MCM-171","Transport Artha/bulan","Perlengkapan & Peralatan","",null,"biaya"],["MCM-166","tray box","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-031","tulang /ceker ayam tua","Sayur & Bumbu Segar","",null,"bks"],["MCM-167D","tusuk gigi per pack","Perlengkapan & Peralatan","",null,"bks"],["MCM-168","tutup gelas plastik","Perlengkapan & Peralatan","",null,"pcs"],["MCM-169","tutup paper cup","Perlengkapan & Peralatan","",null,"bks"],["ORD-30-019","udang fuyung hai/CC","Bahan Order","",null,"kg"],["MCM-172","Utilities Artha(listrik,air,sampah,keamanan)","Perlengkapan & Peralatan","",null,"biaya"],["MCM-173","wadah sendok putih","Perlengkapan & Peralatan","",null,"pcs"],["MCM-108","wajan wok 36cm","Perlengkapan & Peralatan","",null,"pcs"],["MCM-174","wiper/serokan air","Perlengkapan & Peralatan","",null,"pcs"],["SYR-15-032","wortel","Sayur & Bumbu Segar","",null,"kg"]];
+/* ======================================================= */
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rp = n => n == null || n === "" ? "—" : "Rp " + Number(n).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+const angka = s => { if (typeof s === "number") return s; s = String(s ?? "").replace(/[^\d,.-]/g, ""); if (!s) return null;
+  if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); else s = s.replace(/[.,]/g, ""); const n = Number(s); return isFinite(n) ? n : null; };
+const tgl = d => d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const jam = d => d ? new Date(d).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+function toast(msg, err) { const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.textContent = msg; $("#toast").append(t); setTimeout(() => t.remove(), err ? 6000 : 3200); }
+
+const cfg = Object.assign({}, CONFIG, store.get("bk_harga_cfg", {}));
+const ONLINE = !!(cfg.SUPABASE_URL && cfg.ANON_KEY && window.supabase);
+const STATUS_BON = { memproses: ["Diproses AI", "p-info"], menunggu: ["Menunggu", "p-warn"], sebagian: ["Sebagian", "p-info"], diterapkan: ["Diterapkan", "p-ok"], ditolak: ["Diabaikan", "p-mute"], gagal: ["Gagal", "p-bad"] };
+const STATUS_ITEM = { menunggu: ["Menunggu", "p-warn"], diterapkan: ["Diterapkan", "p-ok"], diabaikan: ["Diabaikan", "p-mute"] };
+
+/* ===================== LAPISAN DATA ===================== */
+let api;
+if (ONLINE) {
+  const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.ANON_KEY);
+  const ok = r => { if (r.error) throw new Error(r.error.message); return r.data; };
+  let userEmail = "";
+  api = {
+    sb,
+    async session() { const { data } = await sb.auth.getSession(); userEmail = data.session?.user?.email ?? ""; return data.session; },
+    async login(e, p) { ok(await sb.auth.signInWithPassword({ email: e, password: p })); return this.session(); },
+    async logout() { await sb.auth.signOut(); },
+    user: () => userEmail,
+    async produk() { return ok(await sb.from("produk").select("*").eq("lokasi", cfg.LOKASI).order("nama").range(0, 4999)); },
+    async simpanProduk(p) {
+      const row = { kode: p.kode, nama: p.nama, kategori: p.kategori || null, unit: p.unit || null, vendor: p.vendor || null, aktif: p.aktif !== false };
+      if (p.id) return ok(await sb.from("produk").update({ ...row, updated_at: new Date().toISOString() }).eq("id", p.id).select().single());
+      return ok(await sb.from("produk").insert({ ...row, lokasi: cfg.LOKASI }).select().single());
+    },
+    async ubahHarga(id, harga, vendor, catatan, sumber = "manual") {
+      ok(await sb.rpc("ubah_harga", { p_produk_id: id, p_harga: harga, p_vendor: vendor || null, p_sumber: sumber, p_oleh: userEmail, p_catatan: catatan || null }));
+    },
+    async riwayat(produkId) {
+      let q = sb.from("riwayat_harga").select("*, produk:produk_id(kode,nama,unit)").order("created_at", { ascending: false });
+      q = produkId ? q.eq("produk_id", produkId).limit(50) : q.limit(400);
+      return ok(await q);
+    },
+    async bonList() { return ok(await sb.from("bon_masuk").select("*, bon_item(status,produk_id)").eq("lokasi", cfg.LOKASI).order("created_at", { ascending: false }).limit(200)); },
+    async bon(id) {
+      const bon = ok(await sb.from("bon_masuk").select("*").eq("id", id).single());
+      const items = ok(await sb.from("bon_item").select("*").eq("bon_id", id).order("urutan"));
+      let foto = null;
+      if (bon.foto_path) { const r = await sb.storage.from("bon-foto").createSignedUrl(bon.foto_path, 3600); foto = r.data?.signedUrl ?? null; }
+      return { bon, items, foto };
+    },
+    async ubahItem(id, patch) { ok(await sb.from("bon_item").update(patch).eq("id", id)); },
+    async terapkan(ids) { return ok(await sb.rpc("terapkan_bon_item", { p_item_ids: ids, p_oleh: userEmail })); },
+    async abaikan(ids) { ok(await sb.rpc("abaikan_bon_item", { p_item_ids: ids })); },
+    async scan(file) {
+      const data = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(file); });
+      const { data: s } = await sb.auth.getSession();
+      const r = await fetch(`${cfg.SUPABASE_URL}/functions/v1/${cfg.FUNCTION}`, { method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer " + s.session.access_token, apikey: cfg.ANON_KEY },
+        body: JSON.stringify({ action: "scan", data, media_type: file.type || "image/jpeg", lokasi: cfg.LOKASI }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || "Gagal"); return j.bon_id;
+    },
+    async akses() { return ok(await sb.from("telegram_akses").select("*").order("created_at")); },
+    async simpanAkses(a) { ok(await sb.from("telegram_akses").upsert(a)); },
+    async hapusAkses(id) { ok(await sb.from("telegram_akses").delete().eq("chat_id", id)); },
+    listen(cb) { sb.channel("bon").on("postgres_changes", { event: "*", schema: "public", table: "bon_masuk" }, cb).subscribe(); },
+  };
+} else {
+  /* ---- mode contoh: data di memori, tidak tersimpan ---- */
+  let nid = 1;
+  const P = PRODUK_AWAL.map(([kode, nama, kategori, vendor, harga, unit]) => ({ id: nid++, kode, nama, kategori, vendor: vendor || null, harga_beli: harga, unit, aktif: true, harga_diubah_at: harga ? "2026-09-02T09:00:00+07:00" : null }));
+  const R = [], B = [], I = [], A = [{ chat_id: 123456789, nama: "Contoh — Hendri", aktif: true, created_at: new Date().toISOString() }];
+  const byKode = k => P.find(p => p.kode === k);
+  const tambahBon = (bon, rows) => { const id = "demo-" + (B.length + 1); B.unshift({ id, created_at: new Date().toISOString(), status: "menunggu", ...bon });
+    rows.forEach(([nama, qty, sat, hs, kode, hpu, yakin, cat], i) => I.push({ id: nid++, bon_id: id, urutan: i + 1, nama_di_bon: nama, qty, satuan_bon: sat, harga_satuan_bon: hs, subtotal: qty * hs, produk_id: kode ? byKode(kode)?.id ?? null : null, harga_per_unit: kode ? hpu : null, keyakinan: yakin, catatan: cat, status: "menunggu" })); return id; };
+  const segar = id => { const it = I.filter(i => i.bon_id === id), t = it.filter(i => i.status === "menunggu").length, d = it.filter(i => i.status === "diterapkan").length;
+    B.find(b => b.id === id).status = t === 0 ? (d ? "diterapkan" : "ditolak") : d ? "sebagian" : "menunggu"; };
+  const ubah = (id, harga, vendor, sumber, catatan, bon_id) => { const p = P.find(x => x.id === id); if (p.harga_beli !== harga) R.unshift({ id: nid++, produk_id: id, harga_lama: p.harga_beli, harga_baru: harga, vendor, sumber, catatan, bon_id, oleh: "contoh", created_at: new Date().toISOString() });
+    p.harga_beli = harga; if (vendor) p.vendor = vendor; p.harga_diubah_at = new Date().toISOString(); };
+  tambahBon({ sumber: "telegram", pengirim: "Hendri", vendor: "Toko Sumber Rejeki", tanggal_bon: "2026-10-16", no_bon: "SR-0412", total: 191500 }, [
+    ["BWG PUTIH KATING", 2, "kg", 38000, "SYR-15-002", 38000, .95, null],
+    ["CABE RAWIT IJO", .5, "kg", 21000, "SYR-15-008", 42000, .9, "Bon 1/2 kg Rp 21.000 → per kg"],
+    ["KECAP BANGO 220ML", 3, "bks", 10500, "KRG-20-022", 10500, .82, "Ukuran isi tidak tertulis di katalog"],
+    ["GULA PSR GULAKU 1KG", 1, "kg", 18500, "KRG-20-017", 18500, .88, null],
+    ["PLASTIK HD 24", 2, "pak", 8500, null, null, .3, "Ada 'plastik tk sedang 24 cm' (bks) — perlu dipastikan"],
+  ]);
+  tambahBon({ sumber: "telegram", pengirim: "Hendri", vendor: "Alfa", tanggal_bon: "2026-10-12", no_bon: "AL-77812", total: 40000, status: "diterapkan" }, [["BOTOL KECAP ASIN", 2, "btl", 20000, "MCM-015", 20000, .93, null]]);
+  I.filter(i => i.bon_id === "demo-2").forEach(i => i.status = "diterapkan"); B[0].status = "diterapkan"; B.reverse();
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  api = {
+    demo: true, async session() { return { demo: true }; }, user: () => "mode contoh",
+    async produk() { return P.map(p => ({ ...p })); },
+    async simpanProduk(p) { if (p.id) Object.assign(P.find(x => x.id === p.id), p); else P.push({ ...p, id: nid++, harga_beli: null }); },
+    async ubahHarga(id, h, v, c, s = "manual") { ubah(id, h, v, s, c); },
+    async riwayat(pid) { return R.filter(r => !pid || r.produk_id === pid).map(r => ({ ...r, produk: P.find(p => p.id === r.produk_id) })); },
+    async bonList() { return B.map(b => ({ ...b, bon_item: I.filter(i => i.bon_id === b.id) })); },
+    async bon(id) { return { bon: B.find(b => b.id === id), items: I.filter(i => i.bon_id === id).map(i => ({ ...i })), foto: null }; },
+    async ubahItem(id, patch) { Object.assign(I.find(i => i.id === id), patch); },
+    async terapkan(ids) { let n = 0; for (const i of I.filter(i => ids.includes(i.id) && i.status === "menunggu" && i.produk_id && i.harga_per_unit != null)) {
+      const b = B.find(x => x.id === i.bon_id); ubah(i.produk_id, i.harga_per_unit, b.vendor, b.sumber, `Bon ${b.no_bon} · "${i.nama_di_bon}"`, b.id); i.status = "diterapkan"; n++; }
+      [...new Set(I.filter(i => ids.includes(i.id)).map(i => i.bon_id))].forEach(segar); return n; },
+    async abaikan(ids) { I.filter(i => ids.includes(i.id) && i.status === "menunggu").forEach(i => i.status = "diabaikan"); [...new Set(I.filter(i => ids.includes(i.id)).map(i => i.bon_id))].forEach(segar); },
+    async scan(file) { await wait(1400); return tambahBon({ sumber: "web", pengirim: "mode contoh", vendor: "Pasar Senen — Bu Ijah", tanggal_bon: "2026-10-16", no_bon: null, total: 112000 }, [
+      ["Bawang merah", 1, "kg", 42000, "SYR-15-001", 42000, .93, null], ["Toge", 2, "kg", 9000, "SYR-15-029", 9000, .9, null],
+      ["Daun bawang kcl", .5, "kg", 16000, "SYR-15-013", 32000, .78, "Tulisan '1/2' agak kabur"], ["Seledri", 1, "ikat", 5000, "SYR-15-026", null, .55, "Katalog per kg, bon per ikat — berat tidak diketahui"]]); },
+    async akses() { return A; }, async simpanAkses(a) { const i = A.findIndex(x => x.chat_id === a.chat_id); i < 0 ? A.push({ ...a, created_at: new Date().toISOString() }) : Object.assign(A[i], a); },
+    async hapusAkses(id) { const i = A.findIndex(x => x.chat_id === id); if (i >= 0) A.splice(i, 1); },
+    listen() {},
+  };
+}
+
+/* ===================== STATE & ROUTER ===================== */
+const S = { view: "produk", produk: [], q: store.get("bk_q", ""), kat: "", filter: "semua", bonId: null, bonList: [], pilih: new Set() };
+const byId = id => S.produk.find(p => p.id === id);
+
+async function muatProduk() {
+  S.produk = await api.produk();
+  $("#dlProduk").innerHTML = S.produk.map(p => `<option value="${esc(p.kode)} — ${esc(p.nama)} (${esc(p.unit)})"></option>`).join("");
+}
+async function muatBon() {
+  S.bonList = await api.bonList();
+  const n = S.bonList.filter(b => ["menunggu", "sebagian"].includes(b.status)).length;
+  $("#bonCount").textContent = n || "";
+}
+function go(view) {
+  S.view = view; $$(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === view));
+  render();
+}
+$$(".tab").forEach(t => t.onclick = () => go(t.dataset.view));
+
+function render() {
+  const app = $("#app");
+  const banner = api.demo ? `<div class="banner"><span><b>Mode contoh.</b> Data 507 produk dimuat dari CSV, perubahan tidak tersimpan. Hubungkan ke Supabase di Pengaturan agar bisa dipakai bersama bot Telegram.</span><button class="btn sm" onclick="go('atur')">Hubungkan</button></div>` : "";
+  app.innerHTML = banner + `<div id="view"></div>`;
+  ({ produk: viewProduk, bon: viewBon, riwayat: viewRiwayat, atur: viewAtur })[S.view]($("#view"));
+}
+
+/* ===================== PRODUK ===================== */
+function viewProduk(el) {
+  const kats = [...new Set(S.produk.map(p => p.kategori).filter(Boolean))].sort();
+  const minggu = Date.now() - 7 * 864e5;
+  const n = { semua: S.produk.length, ada: S.produk.filter(p => p.harga_beli != null).length, kosong: S.produk.filter(p => p.harga_beli == null).length, baru: S.produk.filter(p => p.harga_diubah_at && new Date(p.harga_diubah_at) > minggu).length };
+  el.innerHTML = `
+  <div class="stats">
+    ${[["semua", "Total produk"], ["ada", "Sudah ada harga"], ["kosong", "Belum ada harga"], ["baru", "Diperbarui 7 hari"]].map(([k, l]) =>
+      `<button class="stat ${S.filter === k ? "on" : ""}" data-f="${k}"><div class="n">${n[k].toLocaleString("id-ID")}</div><div class="l">${l}</div></button>`).join("")}
+  </div>
+  <div class="toolbar">
+    <input class="input grow" id="q" type="search" placeholder="Cari nama, kode, atau vendor…" value="${esc(S.q)}">
+    <select class="input" id="kat"><option value="">Semua kategori</option>${kats.map(k => `<option ${k === S.kat ? "selected" : ""}>${esc(k)}</option>`).join("")}</select>
+    <button class="btn" id="bImp">Impor CSV</button>
+    <button class="btn" id="bExp">Ekspor CSV</button>
+    <button class="btn primary" id="bAdd">+ Produk</button>
+  </div>
+  <div class="panel"><div class="scroll"><table>
+    <thead><tr><th class="kode">Kode</th><th>Nama produk</th><th>Kategori</th><th>Vendor</th><th class="num">Harga beli</th><th>Unit</th><th>Diperbarui</th></tr></thead>
+    <tbody id="tb"></tbody></table></div><div class="foot" id="foot"></div></div>`;
+  $$(".stat", el).forEach(b => b.onclick = () => { S.filter = b.dataset.f; viewProduk(el); });
+  $("#q").oninput = e => { S.q = e.target.value; store.set("bk_q", S.q); isiTabel(); };
+  $("#kat").onchange = e => { S.kat = e.target.value; isiTabel(); };
+  $("#bAdd").onclick = () => bukaProduk(null);
+  $("#bExp").onclick = eksporCsv;
+  $("#bImp").onclick = () => $("#fileCsv").click();
+  isiTabel();
+}
+function saring() {
+  const q = S.q.trim().toLowerCase().split(/\s+/).filter(Boolean), minggu = Date.now() - 7 * 864e5;
+  return S.produk.filter(p => {
+    if (S.kat && p.kategori !== S.kat) return false;
+    if (S.filter === "ada" && p.harga_beli == null) return false;
+    if (S.filter === "kosong" && p.harga_beli != null) return false;
+    if (S.filter === "baru" && !(p.harga_diubah_at && new Date(p.harga_diubah_at) > minggu)) return false;
+    const s = `${p.kode} ${p.nama} ${p.vendor ?? ""}`.toLowerCase();
+    return q.every(w => s.includes(w));
+  });
+}
+function isiTabel() {
+  const rows = saring();
+  $("#tb").innerHTML = rows.map(p => `<tr class="click" data-id="${p.id}">
+    <td class="kode">${esc(p.kode)}</td><td class="nama">${esc(p.nama)}${p.aktif === false ? ' <span class="tag">nonaktif</span>' : ""}</td>
+    <td><span class="tag">${esc(p.kategori ?? "—")}</span></td><td>${esc(p.vendor ?? "")}</td>
+    <td class="num"><span class="price ${p.harga_beli == null ? "empty" : ""}">${p.harga_beli == null ? "belum ada" : rp(p.harga_beli)}</span></td>
+    <td>${esc(p.unit ?? "")}</td><td class="muted" style="white-space:nowrap">${p.harga_diubah_at ? tgl(p.harga_diubah_at) : ""}</td></tr>`).join("")
+    || `<tr><td colspan="7"><div class="empty-state"><h3>Tidak ada produk yang cocok</h3>Coba kata lain atau ganti filter.</div></td></tr>`;
+  $("#foot").innerHTML = `<span>${rows.length.toLocaleString("id-ID")} dari ${S.produk.length.toLocaleString("id-ID")} produk</span><span>Klik baris untuk ubah harga & lihat riwayat</span>`;
+  $$("#tb tr.click").forEach(tr => tr.onclick = () => bukaProduk(byId(+tr.dataset.id)));
+}
+
+function tutupDrawer() { $$(".scrim,.drawer").forEach(e => e.remove()); }
+function drawer(html) {
+  tutupDrawer();
+  const s = document.createElement("div"); s.className = "scrim"; s.onclick = tutupDrawer;
+  const d = document.createElement("aside"); d.className = "drawer"; d.innerHTML = html;
+  document.body.append(s, d); $$("[data-close]", d).forEach(b => b.onclick = tutupDrawer);
+  return d;
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") { tutupDrawer(); $(".photo-view")?.remove(); } });
+
+async function bukaProduk(p) {
+  const baru = !p; p = p || { kode: "", nama: "", kategori: "", unit: "pcs", vendor: "", aktif: true };
+  const kats = [...new Set(S.produk.map(x => x.kategori).filter(Boolean))].sort();
+  const d = drawer(`
+    <div class="dh"><div><div class="muted mono" style="font-size:12px">${esc(p.kode || "Produk baru")}</div><h2>${esc(p.nama || "Tambah produk")}</h2></div><button class="btn ghost" data-close aria-label="Tutup">✕</button></div>
+    <div class="db">
+      ${baru ? "" : `<div><div class="muted" style="font-size:12.5px">Harga beli sekarang</div><div class="bigprice">${p.harga_beli == null ? "—" : rp(p.harga_beli)} <span class="muted" style="font-size:15px">/ ${esc(p.unit)}</span></div><div class="muted" style="font-size:13px">${p.vendor ? esc(p.vendor) + " · " : ""}${p.harga_diubah_at ? "diperbarui " + jam(p.harga_diubah_at) : "belum pernah diperbarui"}</div></div>
+      <div class="panel" style="padding:14px;display:grid;gap:10px;background:var(--sunk);border-color:transparent">
+        <div class="row2"><div class="field"><label for="hBaru">Harga baru (per ${esc(p.unit)})</label><input class="input mono" id="hBaru" inputmode="decimal" placeholder="mis. 25.000"></div>
+        <div class="field"><label for="hVendor">Vendor</label><input class="input" id="hVendor" value="${esc(p.vendor ?? "")}"></div></div>
+        <div class="field"><label for="hCat">Catatan (opsional)</label><input class="input" id="hCat" placeholder="mis. nota pasar 16/10"></div>
+        <div><button class="btn primary" id="bHarga">Simpan harga</button></div>
+      </div>
+      <div><h3 style="font-size:15px;margin-bottom:6px">Riwayat harga</h3><div id="hist" class="muted">Memuat…</div></div>`}
+      <details ${baru ? "open" : ""}><summary style="cursor:pointer;font-weight:600">Data produk</summary>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div class="row2"><div class="field"><label for="pKode">Kode</label><input class="input mono" id="pKode" value="${esc(p.kode)}"></div>
+          <div class="field"><label for="pUnit">Unit</label><input class="input" id="pUnit" value="${esc(p.unit ?? "")}"></div></div>
+          <div class="field"><label for="pNama">Nama produk</label><input class="input" id="pNama" value="${esc(p.nama)}"></div>
+          <div class="row2"><div class="field"><label for="pKat">Kategori</label><input class="input" id="pKat" list="dlKat" value="${esc(p.kategori ?? "")}"><datalist id="dlKat">${kats.map(k => `<option value="${esc(k)}">`).join("")}</datalist></div>
+          <div class="field"><label for="pVen">Vendor</label><input class="input" id="pVen" value="${esc(p.vendor ?? "")}"></div></div>
+          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pAktif" ${p.aktif !== false ? "checked" : ""}> Produk aktif (ikut dicocokkan bot)</label>
+          <div><button class="btn" id="bSimpanP">${baru ? "Tambah produk" : "Simpan data produk"}</button></div>
+        </div></details>
+    </div>`);
+  $("#bSimpanP", d).onclick = async () => {
+    const row = { id: p.id, kode: $("#pKode", d).value.trim(), nama: $("#pNama", d).value.trim(), unit: $("#pUnit", d).value.trim(), kategori: $("#pKat", d).value.trim(), vendor: $("#pVen", d).value.trim(), aktif: $("#pAktif", d).checked };
+    if (!row.kode || !row.nama) return toast("Kode dan nama wajib diisi", true);
+    try { await api.simpanProduk(row); toast(baru ? "Produk ditambahkan" : "Data produk disimpan"); await muatProduk(); tutupDrawer(); render(); } catch (e) { toast(e.message, true); }
+  };
+  if (baru) return;
+  $("#hBaru", d).focus();
+  const simpan = async () => {
+    const h = angka($("#hBaru", d).value); if (h == null || h < 0) return toast("Isi harga dengan angka, mis. 25000", true);
+    try { await api.ubahHarga(p.id, h, $("#hVendor", d).value.trim(), $("#hCat", d).value.trim()); toast(`Harga ${p.nama} → ${rp(h)}`); await muatProduk(); tutupDrawer(); render(); } catch (e) { toast(e.message, true); }
+  };
+  $("#bHarga", d).onclick = simpan; $("#hBaru", d).onkeydown = e => e.key === "Enter" && simpan();
+  const r = await api.riwayat(p.id);
+  $("#hist", d).innerHTML = r.length ? sparkline(r) + `<div class="hist">${r.map(x => `<div><span class="muted">${tgl(x.created_at)}</span><span>${rp(x.harga_lama)} → <b class="mono">${rp(x.harga_baru)}</b> ${deltaHtml(x.harga_lama, x.harga_baru)}<br><span class="muted" style="font-size:12px">${esc([x.vendor, x.catatan].filter(Boolean).join(" · "))}</span></span><span class="pill p-mute">${esc(x.sumber)}</span></div>`).join("")}</div>` : "Belum ada perubahan tercatat.";
+}
+function deltaHtml(a, b) { if (!a || b == null) return ""; const p = (b - a) / a * 100; if (Math.abs(p) < .05) return `<span class="delta muted">0%</span>`;
+  return `<span class="delta ${p > 0 ? "up" : "down"}">${p > 0 ? "▲" : "▼"}${Math.abs(p).toFixed(1)}%</span>`; }
+function sparkline(r) {
+  const pts = [...r].reverse(); const v = [pts[0].harga_lama ?? pts[0].harga_baru, ...pts.map(x => x.harga_baru)].map(Number);
+  if (v.length < 2) return ""; const W = 440, H = 70, pad = 8, mn = Math.min(...v), mx = Math.max(...v), rg = mx - mn || 1;
+  const xy = v.map((y, i) => [pad + i * (W - 2 * pad) / (v.length - 1), H - pad - (y - mn) / rg * (H - 2 * pad)]);
+  const line = xy.map(p => p.join(",")).join(" "), last = xy[xy.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Grafik riwayat harga">
+    <polygon points="${pad},${H} ${line} ${W - pad},${H}" fill="var(--accent-soft)"/><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="var(--accent)"/></svg>`;
+}
+
+/* ---- CSV (format sama dengan ekspor Runchise) ---- */
+function eksporCsv() {
+  const q = s => /[",\n]/.test(s) ? `"${String(s).replace(/"/g, '""')}"` : s;
+  const L = [`Harga Beli Produk_Bakmi Kelinci_${cfg.LOKASI}`, `Lokasi,${cfg.LOKASI}`, "Kode produk,Nama produk,Vendor,Harga Beli,Unit",
+    ...S.produk.map(p => [p.kode, p.nama, p.vendor ?? "", p.harga_beli ?? "", p.unit ?? ""].map(x => q(String(x))).join(","))];
+  const blob = new Blob([L.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `Harga_Beli_Produk_Bakmi_Kelinci_${cfg.LOKASI.replace(/\W+/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  toast("File CSV dibuat");
+}
+function parseCsv(t) {
+  const rows = []; let r = [], f = "", qt = false;
+  for (let i = 0; i < t.length; i++) { const c = t[i];
+    if (qt) { if (c === '"' && t[i + 1] === '"') { f += '"'; i++; } else if (c === '"') qt = false; else f += c; }
+    else if (c === '"') qt = true; else if (c === ",") { r.push(f); f = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && t[i + 1] === "\n") i++; r.push(f); rows.push(r); r = []; f = ""; } else f += c; }
+  if (f || r.length) { r.push(f); rows.push(r); } return rows;
+}
+$("#fileCsv").onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  const rows = parseCsv(await file.text()); const h = rows.findIndex(r => /kode produk/i.test(r[0] ?? ""));
+  if (h < 0) return toast("Format tidak dikenali. Baris judul harus: Kode produk,Nama produk,Vendor,Harga Beli,Unit", true);
+  let tambah = 0, harga = 0;
+  try {
+    for (const [kode, nama, vendor, hb, unit] of rows.slice(h + 1).filter(r => r[0]?.trim())) {
+      const p = S.produk.find(x => x.kode.toLowerCase() === kode.trim().toLowerCase()); const n = angka(hb);
+      if (!p) { await api.simpanProduk({ kode: kode.trim(), nama: nama.trim(), unit: unit?.trim(), vendor: vendor?.trim() }); tambah++; continue; }
+      if (n != null && Number(p.harga_beli) !== n) { await api.ubahHarga(p.id, n, vendor?.trim(), "Impor " + file.name, "import"); harga++; }
+    }
+    await muatProduk(); render(); toast(`Impor selesai: ${harga} harga diperbarui, ${tambah} produk baru`);
+  } catch (err) { toast(err.message, true); }
+};
+
+/* ===================== BON MASUK ===================== */
+function ringkasBon(b) { const it = b.bon_item ?? []; return { n: it.length, cocok: it.filter(i => i.produk_id).length }; }
+function viewBon(el) {
+  el.innerHTML = `
+  <div class="toolbar"><div class="grow"><h2 style="font-size:22px">Bon & invoice masuk</h2><div class="muted" style="font-size:14px">Dari bot Telegram atau upload di sini. Periksa pencocokan, lalu terapkan ke harga produk.</div></div>
+    <button class="btn primary" id="bUp">Upload foto bon</button></div>
+  <div class="bon-layout"><div class="panel bon-list" id="bl"></div><div class="panel" id="bd" style="min-width:0"></div></div>`;
+  $("#bUp").onclick = () => $("#fileBon").click();
+  $("#bl").innerHTML = S.bonList.map(b => { const r = ringkasBon(b), [l, c] = STATUS_BON[b.status] ?? [b.status, "p-mute"];
+    return `<button class="bon-card ${b.id === S.bonId ? "on" : ""}" data-id="${b.id}"><div class="r1"><b>${esc(b.vendor || "Bon tanpa nama toko")}</b><span class="pill ${c}">${l}</span></div>
+      <small>${b.tanggal_bon ? tgl(b.tanggal_bon) : jam(b.created_at)} · ${r.n} item, ${r.cocok} cocok${b.total ? " · " + rp(b.total) : ""}</small>
+      <small>${b.sumber === "telegram" ? "Telegram" : "Web"} · ${esc(b.pengirim ?? "")}</small></button>`; }).join("")
+    || `<div class="empty-state"><h3>Belum ada bon</h3>Kirim foto bon ke bot Telegram, atau tekan Upload foto bon.</div>`;
+  $$(".bon-card", el).forEach(b => b.onclick = () => { S.bonId = b.dataset.id; $$(".bon-card").forEach(x => x.classList.toggle("on", x === b)); detailBon(); });
+  if (!S.bonId && S.bonList.length) S.bonId = (S.bonList.find(b => ["menunggu", "sebagian"].includes(b.status)) ?? S.bonList[0]).id;
+  if (S.bonId) { $$(".bon-card").forEach(x => x.classList.toggle("on", x.dataset.id === S.bonId)); detailBon(); }
+  else $("#bd").innerHTML = `<div class="empty-state"><h3>Pilih bon</h3>Detail item akan tampil di sini.</div>`;
+}
+async function detailBon() {
+  const el = $("#bd"); if (!el) return;
+  el.innerHTML = `<div class="empty-state">Memuat…</div>`;
+  const { bon, items, foto } = await api.bon(S.bonId);
+  S.pilih = new Set(items.filter(i => i.status === "menunggu" && i.produk_id && i.harga_per_unit != null && i.keyakinan >= .8).map(i => i.id));
+  const [sl, sc] = STATUS_BON[bon.status] ?? [bon.status, "p-mute"];
+  el.innerHTML = `
+    <div class="bon-head">
+      <div class="thumb" id="th" ${foto ? `style="background-image:url('${foto}')" title="Perbesar foto"` : ""}>${foto ? "" : "Foto bon tampil di sini"}</div>
+      <div class="meta"><div><span class="pill ${sc}">${sl}</span></div><h2>${esc(bon.vendor || "Bon tanpa nama toko")}</h2>
+        <div class="kv"><span>Tanggal <b>${tgl(bon.tanggal_bon)}</b></span><span>No. <b class="mono">${esc(bon.no_bon || "—")}</b></span><span>Total <b class="mono">${rp(bon.total)}</b></span></div>
+        <div class="kv"><span>${bon.sumber === "telegram" ? "Telegram" : "Upload web"} · ${esc(bon.pengirim ?? "")}</span><span>${jam(bon.created_at)}</span></div></div>
+    </div>
+    ${bon.error ? `<p class="note" style="margin-top:14px">${esc(bon.error)}</p>` : ""}${bon.raw?.catatan && !bon.error ? `<p class="note" style="margin-top:14px">${esc(bon.raw.catatan)}</p>` : ""}
+    <div class="scroll"><table class="items"><thead><tr><th></th><th>Di bon</th><th>Produk</th><th class="num">Harga / unit produk</th><th>Status</th></tr></thead>
+    <tbody>${items.map(it => { const p = byId(it.produk_id), [l, c] = STATUS_ITEM[it.status], edit = it.status === "menunggu";
+      const kc = it.keyakinan >= .8 ? "var(--ok)" : it.keyakinan >= .6 ? "var(--warn)" : "var(--bad)";
+      return `<tr data-id="${it.id}">
+        <td><input type="checkbox" class="cb" id="cb${it.id}" ${S.pilih.has(it.id) ? "checked" : ""} ${edit ? "" : "disabled"} aria-label="Pilih"></td>
+        <td><div class="nb">${esc(it.nama_di_bon)}</div><div class="sub mono">${it.qty ?? ""} ${esc(it.satuan_bon ?? "")} × ${rp(it.harga_satuan_bon)}</div></td>
+        <td class="pick">${edit ? `<input class="input pp" id="pp${it.id}" list="dlProduk" placeholder="Pilih produk…" value="${p ? esc(`${p.kode} — ${p.nama} (${p.unit})`) : ""}">` : `<b>${esc(p?.nama ?? "—")}</b>`}
+          <div class="sub"><span class="conf" title="Keyakinan AI ${Math.round(it.keyakinan * 100)}%"><i style="width:${Math.round(it.keyakinan * 100)}%;background:${kc}"></i></span> ${Math.round(it.keyakinan * 100)}%${it.catatan ? " · " + esc(it.catatan) : ""}</div></td>
+        <td class="num">${edit ? `<input class="input hp" id="hp${it.id}" inputmode="decimal" value="${it.harga_per_unit ?? ""}" placeholder="—">` : `<span class="price">${rp(it.harga_per_unit)}</span>`}
+          <div class="sub">${p ? `${p.unit ? "per " + esc(p.unit) + " · " : ""}lama ${rp(p.harga_beli)} ${deltaHtml(p.harga_beli, it.harga_per_unit)}` : ""}</div></td>
+        <td><span class="pill ${c}">${l}</span></td></tr>`; }).join("") || `<tr><td colspan="5"><div class="empty-state">Tidak ada item terbaca.</div></td></tr>`}</tbody></table></div>
+    <div class="actions"><span class="sp" id="selInfo"></span>
+      <button class="btn" id="bAbai">Abaikan terpilih</button><button class="btn primary" id="bTerap">Terapkan terpilih</button></div>`;
+  if (foto) $("#th").onclick = () => { const v = document.createElement("div"); v.className = "photo-view"; v.innerHTML = `<img src="${foto}" alt="Foto bon">`; v.onclick = () => v.remove(); document.body.append(v); };
+  const info = () => { $("#selInfo").textContent = S.pilih.size ? `${S.pilih.size} item dipilih` : "Pilih item yang harganya mau diterapkan"; $("#bTerap").disabled = $("#bAbai").disabled = !S.pilih.size; };
+  info();
+  $$(".cb", el).forEach(cb => cb.onchange = () => { const id = +cb.closest("tr").dataset.id; cb.checked ? S.pilih.add(id) : S.pilih.delete(id); info(); });
+  $$(".pp", el).forEach(inp => inp.onchange = async () => {
+    const id = +inp.closest("tr").dataset.id, kode = inp.value.split(" — ")[0].trim(), p = S.produk.find(x => x.kode === kode);
+    if (inp.value && !p) return toast("Pilih produk dari daftar yang muncul", true);
+    try { await api.ubahItem(id, { produk_id: p?.id ?? null, keyakinan: p ? 1 : 0 }); toast(p ? `Dicocokkan ke ${p.nama}` : "Pencocokan dihapus"); detailBon(); } catch (e) { toast(e.message, true); }
+  });
+  $$(".hp", el).forEach(inp => inp.onchange = async () => {
+    const id = +inp.closest("tr").dataset.id;
+    try { await api.ubahItem(id, { harga_per_unit: angka(inp.value) }); detailBon(); } catch (e) { toast(e.message, true); }
+  });
+  $("#bTerap").onclick = async () => {
+    const ids = [...S.pilih]; const kurang = items.filter(i => ids.includes(i.id) && (!i.produk_id || i.harga_per_unit == null));
+    if (kurang.length) return toast(`${kurang.length} item belum punya produk atau harga per unit`, true);
+    try { const n = await api.terapkan(ids); toast(`${n} harga produk diperbarui`); await Promise.all([muatProduk(), muatBon()]); render(); } catch (e) { toast(e.message, true); }
+  };
+  $("#bAbai").onclick = async () => { try { await api.abaikan([...S.pilih]); toast("Item diabaikan"); await muatBon(); render(); } catch (e) { toast(e.message, true); } };
+}
+$("#fileBon").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (f.size > 15e6) return toast("File terlalu besar (maks 15 MB)", true);
+  toast("Membaca bon… biasanya 10–30 detik");
+  try { const id = await api.scan(await perkecil(f)); S.bonId = id; await muatBon(); go("bon"); toast("Bon terbaca, silakan periksa"); } catch (err) { toast("Gagal membaca bon: " + err.message, true); }
+};
+async function perkecil(file) {   // foto HP sering >4 MB; perkecil ke sisi terpanjang 2000 px
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1.5e6) return file;
+  const img = await createImageBitmap(file); const k = Math.min(1, 2000 / Math.max(img.width, img.height));
+  const c = document.createElement("canvas"); c.width = img.width * k; c.height = img.height * k; c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(b => r(new File([b], "bon.jpg", { type: "image/jpeg" })), "image/jpeg", .85));
+}
+
+/* ===================== RIWAYAT ===================== */
+async function viewRiwayat(el) {
+  el.innerHTML = `<div class="toolbar"><div class="grow"><h2 style="font-size:22px">Riwayat perubahan harga</h2><div class="muted" style="font-size:14px">400 perubahan terakhir, terbaru di atas.</div></div></div><div class="panel"><div class="empty-state">Memuat…</div></div>`;
+  const r = await api.riwayat();
+  $(".panel", el).innerHTML = r.length ? `<div class="scroll"><table><thead><tr><th>Waktu</th><th>Produk</th><th class="num">Lama</th><th class="num">Baru</th><th class="num">Selisih</th><th>Vendor</th><th>Sumber</th><th>Oleh / catatan</th></tr></thead><tbody>
+    ${r.map(x => `<tr class="click" data-id="${x.produk_id}"><td class="muted" style="white-space:nowrap">${jam(x.created_at)}</td><td class="nama">${esc(x.produk?.nama)} <span class="muted" style="font-weight:400">/ ${esc(x.produk?.unit)}</span></td>
+      <td class="num price">${rp(x.harga_lama)}</td><td class="num price"><b>${rp(x.harga_baru)}</b></td><td class="num">${deltaHtml(x.harga_lama, x.harga_baru)}</td>
+      <td>${esc(x.vendor ?? "")}</td><td><span class="pill p-mute">${esc(x.sumber)}</span></td><td class="muted" style="font-size:13px">${esc([x.oleh, x.catatan].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="empty-state"><h3>Belum ada perubahan harga</h3>Setiap harga yang diubah manual, lewat bon, atau impor CSV tercatat di sini.</div>`;
+  $$("tr.click", el).forEach(tr => tr.onclick = () => bukaProduk(byId(+tr.dataset.id)));
+}
+
+/* ===================== PENGATURAN ===================== */
+async function viewAtur(el) {
+  el.innerHTML = `<div class="set-grid">
+    <section class="panel"><h3>Koneksi database</h3>
+      <div class="field"><label for="cUrl">Supabase URL</label><input class="input mono" id="cUrl" value="${esc(cfg.SUPABASE_URL)}"></div>
+      <div class="field"><label for="cKey">Anon key</label><input class="input mono" id="cKey" value="${esc(cfg.ANON_KEY)}" placeholder="eyJhbGciOi…"></div>
+      <div class="row2"><div class="field"><label for="cLok">Lokasi</label><input class="input" id="cLok" value="${esc(cfg.LOKASI)}"></div>
+      <div class="field"><label for="cFn">Nama Edge Function</label><input class="input mono" id="cFn" value="${esc(cfg.FUNCTION)}"></div></div>
+      <div class="hint">Disimpan di browser ini. Supaya permanen untuk semua perangkat, isi juga <code>CONFIG</code> di bagian atas file <code>index.html</code>.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="cSave">Simpan & muat ulang</button><button class="btn ghost" id="cReset">Kembali ke bawaan</button></div></section>
+    <section class="panel"><h3>Akun</h3>
+      <div>${api.demo ? "Belum terhubung (mode contoh)." : `Masuk sebagai <b>${esc(api.user())}</b>`}</div>
+      ${api.demo ? "" : `<div><button class="btn" id="bOut">Keluar</button></div>`}
+      <div class="hint">Akun pengguna dibuat di Supabase → Authentication → Users (akun yang sama dengan aplikasi BK Ops bisa dipakai).</div></section>
+    <section class="panel" style="grid-column:1/-1"><h3>Akses bot Telegram</h3>
+      <div class="hint">Hanya chat yang terdaftar dan aktif yang boleh mengirim bon. Ketik <code>/id</code> ke bot untuk melihat Chat ID. Untuk grup, tambahkan bot ke grup lalu ketik <code>/id</code> di grup (ID grup diawali tanda minus).</div>
+      <div class="toolbar" style="margin:0"><input class="input mono" id="aId" placeholder="Chat ID, mis. 123456789" style="max-width:220px" inputmode="numeric"><input class="input" id="aNama" placeholder="Nama, mis. Admin CK" style="max-width:240px"><button class="btn primary" id="aAdd">Tambah</button></div>
+      <div class="scroll"><table><thead><tr><th>Chat ID</th><th>Nama</th><th>Status</th><th></th></tr></thead><tbody id="aTb"></tbody></table></div></section>
+  </div>`;
+  $("#cSave").onclick = () => { store.set("bk_harga_cfg", { SUPABASE_URL: $("#cUrl").value.trim(), ANON_KEY: $("#cKey").value.trim(), LOKASI: $("#cLok").value.trim() || "CK - N1", FUNCTION: $("#cFn").value.trim() || "bon-bot" }); location.reload(); };
+  $("#cReset").onclick = () => { store.set("bk_harga_cfg", {}); location.reload(); };
+  if ($("#bOut")) $("#bOut").onclick = async () => { await api.logout(); location.reload(); };
+  const isi = async () => { const a = await api.akses();
+    $("#aTb").innerHTML = a.map(x => `<tr data-id="${x.chat_id}"><td class="mono">${x.chat_id}</td><td>${esc(x.nama ?? "")}</td>
+      <td><span class="pill ${x.aktif ? "p-ok" : "p-mute"}">${x.aktif ? "Aktif" : "Nonaktif"}</span></td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn sm tg">${x.aktif ? "Nonaktifkan" : "Aktifkan"}</button> <button class="btn sm danger del">Hapus</button></td></tr>`).join("")
+      || `<tr><td colspan="4" class="muted">Belum ada chat terdaftar.</td></tr>`;
+    $$("#aTb .tg").forEach(b => b.onclick = async () => { const id = +b.closest("tr").dataset.id, x = a.find(y => y.chat_id === id); await api.simpanAkses({ chat_id: id, nama: x.nama, aktif: !x.aktif }); isi(); });
+    $$("#aTb .del").forEach(b => b.onclick = async () => { const tr = b.closest("tr");
+      if (b.dataset.yakin) { await api.hapusAkses(+tr.dataset.id); isi(); } else { b.dataset.yakin = 1; b.textContent = "Yakin hapus?"; } }); };
+  $("#aAdd").onclick = async () => { const id = parseInt($("#aId").value.replace(/[^\d-]/g, ""), 10); if (!id) return toast("Isi Chat ID berupa angka", true);
+    try { await api.simpanAkses({ chat_id: id, nama: $("#aNama").value.trim() || null, aktif: true }); $("#aId").value = $("#aNama").value = ""; toast("Chat ditambahkan"); isi(); } catch (e) { toast(e.message, true); } };
+  isi();
+}
+
+/* ===================== MULAI ===================== */
+function loginView(err) {
+  $("nav.tabs").hidden = true;
+  $("#app").innerHTML = `<form class="login" id="fl"><h2>Masuk</h2><div class="muted">Database harga beli Bakmi Kelinci</div>
+    <div class="field"><label for="le">Email</label><input class="input" id="le" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="lp">Kata sandi</label><input class="input" id="lp" type="password" autocomplete="current-password" required></div>
+    ${err ? `<div class="note" style="margin:0">${esc(err)}</div>` : ""}<button class="btn primary">Masuk</button>
+    <button type="button" class="btn ghost" id="lCfg">Ubah koneksi database</button></form>`;
+  $("#fl").onsubmit = async e => { e.preventDefault(); try { await api.login($("#le").value, $("#lp").value); location.reload(); } catch (x) { loginView("Email atau kata sandi salah. " + x.message); } };
+  $("#lCfg").onclick = () => { $("nav.tabs").hidden = false; viewAtur($("#app")); };
+}
+(async function start() {
+  $("#lokasiLbl").textContent = "Bakmi Kelinci · " + cfg.LOKASI;
+  try {
+    if (!(await api.session())) return loginView();
+    await Promise.all([muatProduk(), muatBon()]);
+    const m = location.hash.match(/bon[=-]([\w-]+)/); if (m) { S.bonId = m[1]; S.view = "bon"; }
+    go(S.view);
+    api.listen(async ch => { await muatBon(); if (ch.eventType === "INSERT") toast(`Bon baru dari ${ch.new.pengirim ?? "Telegram"} sedang dibaca…`);
+      if (ch.eventType === "UPDATE" && ch.new.status === "menunggu") toast(`Bon ${ch.new.vendor ?? ""} siap diperiksa`);
+      if (S.view === "bon") { const cur = S.bonId; render(); S.bonId = cur; } });
+  } catch (e) { $("#app").innerHTML = `<div class="empty-state"><h3>Tidak bisa terhubung ke database</h3>${esc(e.message)}<br><br><button class="btn" onclick="go('atur')">Buka Pengaturan</button></div>`; }
+})();
+</script>
+</body>
+</html>
