@@ -164,6 +164,46 @@ td.nama{font-weight:600;min-width:200px}
 .set-grid h3{font-size:17px}
 .hint{font-size:13px;color:var(--muted)}
 code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+
+/* resep */
+.resep-sec{margin-bottom:20px}
+.resep-sec>h3{font-size:17px;margin-bottom:8px}
+.r-msg{border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:14px;white-space:pre-line;overflow-wrap:anywhere}
+.r-msg.err{background:var(--bad-soft);color:var(--bad)} .r-msg.info{background:var(--info-soft);color:var(--info)} .r-msg.ok{background:var(--ok-soft);color:var(--ok)}
+.r-msg b{color:inherit}
+.r-uploads{display:grid;gap:10px}
+.r-upload{padding:12px 14px;display:grid;gap:8px}
+.r-upload .r1{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.r-upload .r1 b{min-width:0;overflow-wrap:anywhere}
+.r-upload .hint{font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.r-err{font-size:14px;background:var(--bad-soft);color:var(--bad);border-radius:8px;padding:6px 10px;white-space:pre-line;overflow-wrap:anywhere}
+.r-drafts{display:flex;flex-wrap:wrap;gap:8px}
+.r-draft{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 12px;font-size:14px;max-width:100%}
+.r-draft>span{min-width:0;overflow-wrap:anywhere}
+#rTersimpan td{font-size:14px}
+#rTersimpan td.nama{overflow-wrap:anywhere}
+#rEditor{padding:16px;display:grid;gap:14px}
+#rEditor input,#rEditor textarea,#rEditor button,#rEditor select{font-size:15px}
+#rEditor textarea.input{min-height:76px;resize:vertical}
+.resep-ed{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.resep-ed{grid-template-columns:minmax(0,1fr)}}
+.row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+#eFoto img{width:100%;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;display:block}
+#eFoto .thumb{width:100%;cursor:default}
+.e-bahan{min-width:1040px}
+.e-bahan th{font-size:12.5px}
+.e-bahan td{vertical-align:top;padding:6px}
+.e-bahan input.input{min-height:40px;padding:6px 8px}
+.e-bahan td.no{width:36px;padding-top:15px;color:var(--muted)}
+.e-bahan td.cb{text-align:center;padding-top:14px}
+.e-bahan td.cb input{width:20px;height:20px}
+.e-bahan tr.cek td{background:var(--warn-soft)}
+.e-bahan .ops{white-space:nowrap;display:flex;gap:4px}
+.e-bahan .ops .btn{min-width:40px;justify-content:center;padding:6px 10px}
+#ePeringatan li{margin-bottom:6px;overflow-wrap:anywhere}
+#ePeringatan .btn{min-height:32px;padding:2px 10px;margin-left:6px}
+.e-izin{display:flex;gap:8px;align-items:center;font-size:15px;font-weight:600}
+.e-izin input{width:20px;height:20px}
 @media (max-width:640px){
   .items thead{display:none}
   .items tr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:6px 8px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -191,6 +231,7 @@ code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px
       <button class="tab" role="tab" data-view="produk" aria-selected="true">Produk</button>
       <button class="tab" role="tab" data-view="bon">Bon Masuk <span class="count" id="bonCount"></span></button>
       <button class="tab" role="tab" data-view="riwayat">Riwayat Harga</button>
+      <button class="tab" role="tab" data-view="resep">Resep</button>
       <button class="tab" role="tab" data-view="atur">Pengaturan</button>
     </nav>
   </div>
@@ -201,6 +242,7 @@ code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px
 <datalist id="dlProduk"></datalist>
 <input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
 <input type="file" id="fileBon" accept="image/*,application/pdf" hidden>
+<input type="file" id="fileResep" accept="image/jpeg,image/png,image/webp" hidden>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -327,6 +369,65 @@ if (ONLINE) {
   };
 }
 
+/* ---- data resep: RPC resep_* (supabase/03_resep.sql) + bucket privat resep-foto ---- */
+if (!api.demo) {
+  const sb = api.sb;
+  const rpc = async (name, args) => {
+    const r = await sb.rpc(name, args);
+    if (r.error) throw Object.assign(new Error(r.error.message || "Permintaan gagal"), { code: r.error.code });
+    return r.data;
+  };
+  Object.assign(api, {
+    async resepUid() { const { data } = await sb.auth.getSession(); return data.session?.user?.id ?? null; },
+    resepDaftar: () => rpc("resep_daftar", { p_lokasi: cfg.LOKASI }),
+    resepReservasi: m => rpc("resep_reservasi_upload", { p_id: m.id, p_sha256: m.sha256, p_mime_type: m.mime, p_ukuran: m.ukuran, p_nama_file: m.nama, p_lokasi: cfg.LOKASI }),
+    async resepKirimFoto(path, bytes, mime) {   // true = baru tersimpan; false = objek sudah ada (tidak ditimpa)
+      let r;
+      try { r = await sb.storage.from("resep-foto").upload(path, bytes, { contentType: mime, upsert: false }); }
+      catch { throw new Error("koneksi terputus saat mengirim foto"); }
+      if (!r.error) return true;
+      const e = r.error;
+      if (String(e.statusCode) === "409" || e.status === 409 || /already exists|duplicate/i.test(`${e.message} ${e.error}`)) return false;
+      throw new Error(e.message || e.error || "unggah foto ditolak server");
+    },
+    resepKonfirmasi: id => rpc("resep_konfirmasi_upload", { p_id: id }),
+    resepCobaLagi: id => rpc("resep_coba_lagi", { p_id: id }),
+    resepSimpan: (id, revisi, data, izinkan) => rpc("resep_simpan", { p_resep_id: id, p_revisi: revisi, p_data: data, p_izinkan_belum_lengkap: !!izinkan }),
+    resepSnapshot: () => rpc("resep_snapshot", { p_lokasi: cfg.LOKASI }),
+    async resepFotoUrl(path) {   // URL bertanda tangan pendek; hanya untuk preview, tidak disimpan
+      const r = await sb.storage.from("resep-foto").createSignedUrl(path, 600);
+      if (r.error) throw new Error(r.error.message || "akses foto ditolak");
+      return r.data?.signedUrl ?? null;
+    },
+  });
+} else {
+  /* mode contoh: satu resep contoh di memori, tidak tersimpan; tanpa upload/AI */
+  const now = new Date().toISOString();
+  const RC = [{ id: "contoh-resep-1", lokasi: cfg.LOKASI, upload_id: null, urutan: 1, nama: "Contoh — Saus Uji (data contoh)", kategori: "Contoh", yield_asli: null, yield_jumlah: null,
+    yield_satuan: null, catatan: "Hanya contoh tampilan; tidak tersimpan.", peringatan: [], status: "tersimpan", catatan_belum_lengkap: false, revisi: 1, created_at: now, updated_at: now,
+    bahan: [{ urutan: 1, nama: "Bahan contoh A", jumlah_asli: "1/2", jumlah: null, satuan: "kg", catatan: null, perlu_cek: false, terkonfirmasi: false },
+      { urutan: 2, nama: "Bahan contoh B", jumlah_asli: null, jumlah: null, satuan: null, catatan: "jumlah tidak tertulis", perlu_cek: false, terkonfirmasi: false }] }];
+  const salin = x => JSON.parse(JSON.stringify(x));
+  const mati = async () => { throw new Error("Mode contoh: upload foto dan pembacaan AI nonaktif. Hubungkan ke Supabase di Pengaturan."); };
+  Object.assign(api, {
+    async resepUid() { return null; },
+    async resepDaftar() { return { uploads: [], resep: salin(RC) }; },
+    resepReservasi: mati, resepKirimFoto: mati, resepKonfirmasi: mati, resepCobaLagi: mati,
+    async resepSimpan(id, revisi, data) {
+      const r = RC.find(x => x.id === id); if (!r) throw new Error("Resep tidak ditemukan");
+      if (r.revisi !== revisi) throw Object.assign(new Error("Resep sudah diubah. Muat ulang sebelum menyimpan."), { code: "RS409" });
+      const belum = data.peringatan.length > 0 || data.bahan.some(b => b.perlu_cek && !b.terkonfirmasi);
+      Object.assign(r, salin(data), { bahan: data.bahan.map((b, i) => ({ urutan: i + 1, ...b })), status: "tersimpan", catatan_belum_lengkap: belum, revisi: r.revisi + 1, updated_at: new Date().toISOString() });
+      return salin(r);
+    },
+    async resepSnapshot() {
+      const s = RC.filter(r => r.status === "tersimpan");
+      return { lokasi: cfg.LOKASI, dibuat_at: new Date().toISOString(), jumlah_resep: s.length, jumlah_bahan: s.reduce((n, r) => n + r.bahan.length, 0), resep: salin(s) };
+    },
+    async resepFotoUrl() { return null; },
+  });
+}
+
 /* ===================== STATE & ROUTER ===================== */
 const S = { view: "produk", produk: [], q: store.get("bk_q", ""), kat: "", filter: "semua", bonId: null, bonList: [], pilih: new Set() };
 const byId = id => S.produk.find(p => p.id === id);
@@ -341,6 +442,7 @@ async function muatBon() {
   $("#bonCount").textContent = n || "";
 }
 function go(view) {
+  if (S.view === "resep" && view !== "resep") { if (!resepBolehTinggal()) return; RS.ed = null; berhentiPoll(); }
   S.view = view; $$(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === view));
   render();
 }
@@ -350,7 +452,7 @@ function render() {
   const app = $("#app");
   const banner = api.demo ? `<div class="banner"><span><b>Mode contoh.</b> Data 507 produk dimuat dari CSV, perubahan tidak tersimpan. Hubungkan ke Supabase di Pengaturan agar bisa dipakai bersama bot Telegram.</span><button class="btn sm" onclick="go('atur')">Hubungkan</button></div>` : "";
   app.innerHTML = banner + `<div id="view"></div>`;
-  ({ produk: viewProduk, bon: viewBon, riwayat: viewRiwayat, atur: viewAtur })[S.view]($("#view"));
+  ({ produk: viewProduk, bon: viewBon, riwayat: viewRiwayat, resep: viewResep, atur: viewAtur })[S.view]($("#view"));
 }
 
 /* ===================== PRODUK ===================== */
@@ -586,6 +688,398 @@ async function viewRiwayat(el) {
       <td>${esc(x.vendor ?? "")}</td><td><span class="pill p-mute">${esc(x.sumber)}</span></td><td class="muted" style="font-size:13px">${esc([x.oleh, x.catatan].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table></div>`
     : `<div class="empty-state"><h3>Belum ada perubahan harga</h3>Setiap harga yang diubah manual, lewat bon, atau impor CSV tercatat di sini.</div>`;
   $$("tr.click", el).forEach(tr => tr.onclick = () => bukaProduk(byId(+tr.dataset.id)));
+}
+
+/* ===================== RESEP ===================== */
+const RESEP_POLL_MS = 5000, RESEP_MAKS = 10 * 1024 * 1024;
+const EXCELJS_SRC = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+const EXCELJS_SRI = "sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz";
+const STATUS_UPLOAD = { mengunggah: ["Belum lengkap terunggah", "p-warn"], antre: ["Menunggu pemroses lokal", "p-warn"], memproses: ["Sedang dibaca", "p-info"], gagal: ["Gagal", "p-bad"] };
+const RS = { data: null, err: null, q: "", ed: null, dirty: false, timer: null, seq: 0, uid: null, resumeId: null, busy: false };
+const fmtN = n => Number(n).toLocaleString("id-ID");
+const angkaTeks = n => n == null ? "" : Number(n).toLocaleString("id-ID", { useGrouping: false, maximumFractionDigits: 20 });
+const wibTeks = d => { const s = new Date(new Date(d).getTime() + 7 * 36e5).toISOString(); return s.slice(0, 10) + " " + s.slice(11, 16); };   // WIB = UTC+7, tanpa DST
+const skemaHilang = e => ["PGRST202", "PGRST205", "42883", "42P01"].includes(e?.code) || /schema cache|could not find the function/i.test(e?.message ?? "");
+const PESAN_SKEMA = "Fitur Resep belum aktif di database ini. Administrator perlu menjalankan migration supabase/03_resep.sql di Supabase → SQL Editor, lalu muat ulang halaman. Menu Produk, Bon, Riwayat, dan Pengaturan tetap bisa dipakai.";
+
+function resepBolehTinggal() { return !RS.dirty || confirm("Perubahan resep belum disimpan. Tinggalkan tanpa menyimpan?"); }
+window.addEventListener("beforeunload", e => { if (RS.dirty) { e.preventDefault(); e.returnValue = ""; } });
+function berhentiPoll() { clearTimeout(RS.timer); RS.timer = null; }
+function jadwalPoll() {   // status dimuat ulang tiap 5 detik hanya saat tab Resep aktif, halaman terlihat, dan login
+  berhentiPoll();
+  if (api.demo || S.view !== "resep" || document.visibilityState !== "visible" || skemaHilang(RS.err) || RS.err?.code === "RS401") return;
+  RS.timer = setTimeout(() => { RS.timer = null; muatResep(); }, RESEP_POLL_MS);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") berhentiPoll();
+  else if (S.view === "resep" && !api.demo && !RS.timer) muatResep();
+});
+
+async function muatResep() {
+  const seq = ++RS.seq;
+  try {
+    if (!RS.uid) RS.uid = await api.resepUid();
+    const d = await api.resepDaftar();
+    if (seq !== RS.seq) return;
+    RS.data = d; RS.err = null;
+  } catch (e) { if (seq !== RS.seq) return; RS.err = e; }
+  if (S.view !== "resep") return;
+  if (!RS.ed) renderDaftar();
+  jadwalPoll();
+}
+function resepPesan(teks, jenis = "err") {
+  const el = $("#rPesan"); if (!el) return teks && toast(teks, jenis === "err");
+  el.innerHTML = teks ? `<div class="r-msg ${jenis}">${esc(teks)}</div>` : "";
+}
+
+function viewResep(el) {
+  el.innerHTML = `<div id="resepView">
+    <div class="toolbar"><div class="grow"><h2 style="font-size:22px">Resep</h2><div class="muted" style="font-size:14px">Upload foto resep, periksa hasil baca, lalu simpan. Ekspor Excel memuat seluruh resep tersimpan (draft tidak ikut).</div></div>
+      <button class="btn primary" id="rUpload" ${api.demo ? 'disabled title="Upload dan pembacaan AI butuh koneksi Supabase"' : ""}>Upload Foto</button>
+      <button class="btn" id="rEkspor">Ekspor Excel</button></div>
+    ${api.demo ? `<div class="r-msg info" id="rDemo"><b>Mode contoh:</b> resep di bawah hanya contoh dan tidak tersimpan — perubahan hilang saat halaman dimuat ulang. Upload foto dan pembacaan AI nonaktif sampai terhubung ke Supabase.</div>` : ""}
+    <div id="rPesan" role="status" aria-live="polite"></div>
+    <div id="rIsi"></div></div>`;
+  $("#rUpload").onclick = () => { if (api.demo) return; RS.resumeId = null; $("#fileResep").click(); };
+  $("#rEkspor").onclick = eksporResep;
+  if (RS.ed) renderEditor(); else renderDaftar();
+  muatResep();
+}
+
+/* ---- daftar unggahan, draft, dan resep tersimpan ---- */
+function cocokResep(r, q) { const s = `${r.nama ?? ""} ${r.kategori ?? ""}`.toLowerCase(); return q.every(w => s.includes(w)); }
+function labelUpload(u, list = []) {
+  if (u.status !== "selesai") return STATUS_UPLOAD[u.status] ?? [u.status, "p-mute"];
+  const simpan = list.filter(r => r.status === "tersimpan").length;
+  return !list.length ? ["Selesai dibaca", "p-mute"] : !simpan ? ["Siap diperiksa", "p-info"] : simpan < list.length ? ["Tersimpan sebagian", "p-info"] : ["Tersimpan semua", "p-ok"];
+}
+function renderDaftar() {
+  const el = $("#rIsi"); if (!el) return;
+  if (skemaHilang(RS.err)) { el.innerHTML = `<div class="r-msg err" id="rSkema">${esc(PESAN_SKEMA)}\nDetail: ${esc(RS.err.message)}</div>`; return; }
+  if (!RS.data) {
+    el.innerHTML = RS.err ? `<div class="r-msg err">Gagal memuat resep: ${esc(RS.err.message)}${RS.err.code === "RS401" ? "\nSesi login berakhir; muat ulang halaman lalu masuk lagi." : ""}</div>` : `<div class="panel"><div class="empty-state">Memuat…</div></div>`;
+    return;
+  }
+  if (!$("#rQ", el)) {
+    el.innerHTML = `<div class="toolbar"><input class="input grow" id="rQ" type="search" placeholder="Cari nama atau kategori resep…" aria-label="Cari resep"></div>
+      <div id="rGagalMuat"></div>
+      <section class="resep-sec"><h3>Unggahan & draft</h3><div class="r-uploads" id="rUploads"></div></section>
+      <section class="resep-sec"><h3>Resep tersimpan</h3><div class="panel"><div class="scroll"><table id="rTersimpan">
+        <thead><tr><th>Nama resep</th><th>Kategori</th><th>Yield</th><th class="num">Bahan</th><th>Perlu cek</th><th>Diperbarui</th></tr></thead><tbody></tbody></table></div>
+        <div class="foot" id="rFoot"></div></div></section>`;
+    $("#rQ").value = RS.q;
+    $("#rQ").oninput = e => { RS.q = e.target.value; isiDaftarResep(); };
+  }
+  $("#rGagalMuat").innerHTML = RS.err ? `<div class="r-msg err">Gagal memuat ulang status: ${esc(RS.err.message)} — dicoba lagi otomatis.</div>` : "";
+  isiDaftarResep();
+}
+function isiDaftarResep() {
+  const q = RS.q.trim().toLowerCase().split(/\s+/).filter(Boolean), { uploads, resep } = RS.data;
+  const per = new Map(); resep.forEach(r => per.set(r.upload_id, [...(per.get(r.upload_id) ?? []), r]));
+  const kartu = uploads.map(u => {
+    const list = (per.get(u.id) ?? []).sort((a, b) => a.urutan - b.urutan), [label, cls] = labelUpload(u, list);
+    const draft = list.filter(r => r.status === "draft"), tampil = draft.filter(r => cocokResep(r, q)), simpan = list.length - draft.length;
+    if (q.length && !tampil.length) return "";
+    const milik = !!RS.uid && u.pemilik === RS.uid;
+    return `<div class="panel r-upload" data-id="${esc(u.id)}">
+      <div class="r1"><span class="pill ${cls}">${esc(label)}</span><b>${esc(u.nama_file || "Foto tanpa nama")}</b>
+        <span class="muted" style="font-size:13px">${jam(u.created_at)}${u.pemilik_email ? " · " + esc(u.pemilik_email) : ""}${list.length ? ` · ${list.length} resep terbaca, ${simpan} tersimpan` : ""}</span></div>
+      ${u.status === "mengunggah" ? (milik
+        ? `<div class="hint">Foto belum lengkap terkirim. Pilih file yang sama untuk melanjutkan; tidak akan menjadi unggahan ganda. <button class="btn r-lanjut">Lanjutkan unggah</button></div>`
+        : `<div class="hint">Diunggah oleh ${esc(u.pemilik_email || "akun lain")} dan belum lengkap. Minta pengunggah tersebut melanjutkan dari perangkatnya.</div>`) : ""}
+      ${u.status === "antre" ? `<div class="hint">Foto lengkap tersimpan. Pemroses lokal di Mac membacanya saat aktif; bila Mac mati, unggahan tetap menunggu.</div>` : ""}
+      ${u.status === "gagal" ? `<div class="r-err">${esc(u.error || "Pembacaan gagal")}</div><div><button class="btn r-retry">Coba Lagi</button></div>` : ""}
+      ${tampil.length ? `<div class="r-drafts">${tampil.map(r => `<div class="r-draft" data-id="${esc(r.id)}"><span><b>${esc(r.nama || "(tanpa nama)")}</b>
+        <span class="muted">· resep ke-${r.urutan} · ${r.bahan.length} bahan${r.peringatan.length ? " · ada catatan" : ""}</span></span><button class="btn r-buka">Periksa</button></div>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
+  $("#rUploads").innerHTML = kartu || `<div class="panel"><div class="empty-state">${q.length ? "Tidak ada draft yang cocok." : "Belum ada unggahan. Tekan <b>Upload Foto</b> untuk mengirim foto resep."}</div></div>`;
+
+  const semua = resep.filter(r => r.status === "tersimpan"), rows = semua.filter(r => cocokResep(r, q))
+    .sort((a, b) => (a.nama ?? "").localeCompare(b.nama ?? "", "id") || (a.id < b.id ? -1 : 1));
+  const kembar = new Set(semua.map(r => (r.nama ?? "").toLowerCase()).filter((n, i, a) => a.indexOf(n) !== i));
+  $("#rTersimpan tbody").innerHTML = rows.map(r => {
+    const perlu = r.catatan_belum_lengkap, y = r.yield_asli || [angkaTeks(r.yield_jumlah), r.yield_satuan].filter(Boolean).join(" ");
+    return `<tr class="click r-resep" data-id="${esc(r.id)}"><td class="nama">${esc(r.nama)}${kembar.has((r.nama ?? "").toLowerCase()) ? ` <span class="tag mono" title="Nama sama dengan resep lain; ID berbeda">ID ${esc(r.id.slice(0, 8))}</span>` : ""}</td>
+      <td>${r.kategori ? `<span class="tag">${esc(r.kategori)}</span>` : ""}</td><td>${esc(y)}</td><td class="num mono">${r.bahan.length}</td>
+      <td>${perlu ? `<span class="pill p-warn">Ada catatan</span>` : `<span class="pill p-ok">Lengkap</span>`}</td><td class="muted" style="white-space:nowrap">${jam(r.updated_at)}</td></tr>`;
+  }).join("") || `<tr><td colspan="6"><div class="empty-state">${semua.length ? "Tidak ada resep yang cocok dengan pencarian." : "Belum ada resep tersimpan. Periksa draft hasil foto lalu tekan Simpan Resep."}</div></td></tr>`;
+  $("#rFoot").innerHTML = `<span>${fmtN(rows.length)} dari ${fmtN(semua.length)} resep tersimpan</span><span>Klik baris untuk membuka & mengoreksi</span>`;
+
+  $$("#rUploads .r-buka").forEach(b => b.onclick = () => bukaEditor(b.closest(".r-draft").dataset.id));
+  $$("#rUploads .r-retry").forEach(b => b.onclick = () => cobaLagiResep(b.closest(".r-upload").dataset.id, b));
+  $$("#rUploads .r-lanjut").forEach(b => b.onclick = () => { RS.resumeId = b.closest(".r-upload").dataset.id; $("#fileResep").click(); });
+  $$("#rTersimpan tr.r-resep").forEach(tr => tr.onclick = () => bukaEditor(tr.dataset.id));
+}
+async function cobaLagiResep(id, btn) {
+  btn.disabled = true;
+  try { await api.resepCobaLagi(id); resepPesan("Unggahan dimasukkan lagi ke antrean. Foto tidak diunggah ulang.", "ok"); }
+  catch (e) { resepPesan("Coba Lagi gagal: " + e.message); }
+  await muatResep();
+}
+
+/* ---- upload: validasi isi file → SHA-256 → reservasi → foto privat → konfirmasi ---- */
+function jenisGambar(b) {
+  const s = (i, n) => String.fromCharCode(...b.slice(i, i + n));
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if ([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((x, i) => b[i] === x)) return "image/png";
+  if (s(0, 4) === "RIFF" && s(8, 4) === "WEBP") return "image/webp";
+  return null;
+}
+$("#fileResep").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) unggahResep(f); };
+async function unggahResep(file) {
+  const target = RS.resumeId; RS.resumeId = null;
+  if (api.demo) return resepPesan("Mode contoh: upload foto dan pembacaan AI nonaktif.");
+  if (RS.busy) return resepPesan("Tunggu unggahan sebelumnya selesai.", "info");
+  if (!file.size) return resepPesan(`File "${file.name}" kosong.`);
+  if (file.size > RESEP_MAKS) return resepPesan(`File "${file.name}" terlalu besar (${(file.size / 1048576).toLocaleString("id-ID", { maximumFractionDigits: 1 })} MiB). Maksimal 10 MiB per foto.`);
+  RS.busy = true; $("#rUpload") && ($("#rUpload").disabled = true);
+  try {
+    const bytes = await file.arrayBuffer(), mime = jenisGambar(new Uint8Array(bytes, 0, Math.min(12, bytes.byteLength)));
+    if (!mime) return resepPesan(`Format "${file.name}" tidak didukung. Pilih foto JPEG, PNG, atau WebP (diperiksa dari isi file, bukan nama). Format lain tidak dikonversi otomatis.`);
+    resepPesan("Menyiapkan unggahan…", "info");
+    const sha = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(x => x.toString(16).padStart(2, "0")).join("");
+    const tj = target && RS.data?.uploads.find(u => u.id === target);
+    if (tj && tj.sha256 !== sha) return resepPesan(`File "${file.name}" berbeda dari unggahan "${tj.nama_file || "foto"}" yang ingin dilanjutkan. Pilih file yang sama persis.`);
+    const r = await api.resepReservasi({ id: crypto.randomUUID(), sha256: sha, mime, ukuran: file.size, nama: file.name });
+    const u = r.upload;
+    if (u.status !== "mengunggah") {
+      return resepPesan(`Foto ini sudah pernah diunggah ("${u.nama_file || "foto"}", status: ${labelUpload(u, (RS.data?.resep ?? []).filter(x => x.upload_id === u.id))[0]}). Unggahan yang ada dipakai; tidak dibuat unggahan atau resep ganda.`, "info");
+    }
+    if (!r.milik_sendiri) {
+      return resepPesan(`File yang sama sudah direservasi oleh ${r.pemilik_email || "akun lain"} tetapi fotonya belum lengkap. Minta pengunggah tersebut melanjutkan unggahan dari perangkatnya; kepemilikan dan foto tidak dipindahkan atau ditimpa.`);
+    }
+    resepPesan(r.baru ? "Mengunggah foto…" : "Melanjutkan unggahan yang belum lengkap…", "info");
+    try { await api.resepKirimFoto(u.foto_path, bytes, mime); }
+    catch (e) { return resepPesan(`Upload foto gagal (${e.message}). Unggahan dicatat sebagai belum lengkap — pilih file yang sama lagi untuk melanjutkan; tidak akan dobel.`); }
+    try { await api.resepKonfirmasi(u.id); }
+    catch (e) { return resepPesan(`Konfirmasi foto gagal (${e.message}). Pilih file yang sama lagi untuk melanjutkan.`); }
+    resepPesan(`Foto "${file.name}" tersimpan. Status: Menunggu pemroses lokal.`, "ok");
+  } catch (e) {
+    resepPesan(skemaHilang(e) ? PESAN_SKEMA : "Upload gagal: " + e.message);
+  } finally {
+    RS.busy = false; $("#rUpload") && ($("#rUpload").disabled = api.demo);
+    await muatResep();
+  }
+}
+
+/* ---- editor draft / resep ---- */
+function edDari(r) {
+  return { id: r.id, revisi: r.revisi, status: r.status, upload_id: r.upload_id, urutan: r.urutan, izinkan: false,
+    nama: r.nama ?? "", kategori: r.kategori ?? "", yield_asli: r.yield_asli ?? "", yield_jumlah: angkaTeks(r.yield_jumlah), yield_satuan: r.yield_satuan ?? "", catatan: r.catatan ?? "",
+    peringatan: [...(r.peringatan ?? [])],
+    bahan: (r.bahan ?? []).map(b => ({ nama: b.nama ?? "", jumlah_asli: b.jumlah_asli ?? "", jumlah: angkaTeks(b.jumlah), satuan: b.satuan ?? "", catatan: b.catatan ?? "", perlu_cek: !!b.perlu_cek, terkonfirmasi: !!b.terkonfirmasi })) };
+}
+function bukaEditor(id) {
+  const r = RS.data?.resep.find(x => x.id === id); if (!r) return;
+  if (RS.ed && !resepBolehTinggal()) return;
+  RS.ed = edDari(r); RS.dirty = false; resepPesan(""); renderEditor();
+  $("#rEditor")?.scrollIntoView({ block: "start" });
+}
+function tutupEditor() { if (!resepBolehTinggal()) return; RS.ed = null; RS.dirty = false; renderDaftar(); }
+const tandaiUbah = () => { RS.dirty = true; };
+function edPesan(teks, jenis = "err") { const el = $("#ePesan"); if (el) el.innerHTML = teks ? `<div class="r-msg ${jenis}" style="margin:0">${esc(teks)}</div>` : ""; }
+
+function renderEditor() {
+  const el = $("#rIsi"), e = RS.ed; if (!el || !e) return;
+  const draft = e.status === "draft";
+  el.innerHTML = `<div class="panel" id="rEditor">
+    <div class="toolbar" style="margin:0"><div class="grow"><div class="muted" style="font-size:13px">${draft ? `Draft hasil baca · resep ke-${e.urutan} dari foto` : "Resep tersimpan"} · revisi ${e.revisi}${api.demo ? " · data contoh (tidak tersimpan)" : ""}</div>
+      <h2 style="font-size:21px">${draft ? "Periksa draft" : "Ubah resep"} <span class="pill ${draft ? "p-warn" : "p-ok"}">${draft ? "Draft" : "Tersimpan"}</span></h2></div>
+      <button class="btn" id="eTutup">Tutup</button></div>
+    <div class="resep-ed">
+      <div id="eFoto"><div class="thumb">${api.demo ? "Mode contoh: tanpa foto sumber" : "Memuat foto sumber…"}</div></div>
+      <div style="display:grid;gap:12px;min-width:0">
+        <div class="row2"><div class="field"><label for="eNama">Nama resep (wajib)</label><input class="input" id="eNama" maxlength="200"></div>
+          <div class="field"><label for="eKategori">Kategori (opsional)</label><input class="input" id="eKategori" maxlength="100"></div></div>
+        <div class="row3"><div class="field"><label for="eYieldAsli">Yield / hasil jadi (teks asli)</label><input class="input" id="eYieldAsli" maxlength="100"></div>
+          <div class="field"><label for="eYieldJumlah">Yield angka</label><input class="input mono" id="eYieldJumlah" inputmode="decimal"></div>
+          <div class="field"><label for="eYieldSatuan">Satuan yield</label><input class="input" id="eYieldSatuan" maxlength="50"></div></div>
+        <div class="field"><label for="eCatatan">Catatan resep</label><textarea class="input" id="eCatatan" maxlength="2000"></textarea></div>
+        <div id="eSama"></div><div id="ePeringatanBox"></div>
+      </div>
+    </div>
+    <div><h3 style="font-size:16px;margin-bottom:4px">Komposisi bahan</h3><div class="hint">Jumlah asli = tulisan sumber (mis. 1/2, 2 sdm). Jumlah angka hanya diisi bila pasti; biarkan kosong bila tidak tertulis — tidak dianggap nol. Tidak ada konversi satuan.</div></div>
+    <div class="scroll"><table class="e-bahan" id="eBahan"><thead><tr><th>No</th><th>Nama bahan</th><th>Jumlah asli</th><th>Jumlah angka</th><th>Satuan</th><th>Catatan</th><th>Perlu cek</th><th>Sudah dicek</th><th>Urutan</th></tr></thead><tbody></tbody></table></div>
+    <div><button class="btn" id="eTambah">+ Tambah bahan</button></div>
+    <div id="ePesan" role="status" aria-live="polite"></div>
+    <div class="actions" style="padding:0;border:0">
+      <label class="e-izin"><input type="checkbox" id="eIzinkan"> Simpan dengan catatan belum lengkap</label>
+      <span class="sp"></span>
+      <button class="btn" id="eMuatUlang">Muat ulang</button>
+      <button class="btn primary" id="eSimpan">Simpan Resep</button>
+    </div></div>`;
+  for (const [id, k] of [["eNama", "nama"], ["eKategori", "kategori"], ["eYieldAsli", "yield_asli"], ["eYieldJumlah", "yield_jumlah"], ["eYieldSatuan", "yield_satuan"], ["eCatatan", "catatan"]]) {
+    const inp = $("#" + id); inp.value = e[k]; inp.oninput = () => { e[k] = inp.value; tandaiUbah(); if (k === "nama") isiSama(); };
+  }
+  $("#eIzinkan").checked = e.izinkan; $("#eIzinkan").onchange = ev => { e.izinkan = ev.target.checked; };
+  $("#eTutup").onclick = tutupEditor;
+  $("#eTambah").onclick = () => { e.bahan.push({ nama: "", jumlah_asli: "", jumlah: "", satuan: "", catatan: "", perlu_cek: false, terkonfirmasi: false }); tandaiUbah(); isiBahan(); $$("#eBahan .b-nama").at(-1)?.focus(); };
+  $("#eSimpan").onclick = simpanEditor;
+  $("#eMuatUlang").onclick = muatUlangEditor;
+  isiBahan(); isiPeringatan(); isiSama(); fotoSumber();
+}
+function isiSama() {
+  const e = RS.ed, n = e.nama.trim().toLowerCase(), box = $("#eSama"); if (!box) return;
+  const sama = n ? (RS.data?.resep ?? []).filter(r => r.id !== e.id && r.status === "tersimpan" && (r.nama ?? "").trim().toLowerCase() === n).length : 0;
+  box.innerHTML = sama ? `<div class="r-msg info" style="margin:0">Ada ${sama} resep tersimpan lain bernama sama. Menyimpan tidak menimpa atau menggabungkan; masing-masing punya ID sendiri.</div>` : "";
+}
+function isiPeringatan() {
+  const box = $("#ePeringatanBox"), p = RS.ed.peringatan;
+  box.innerHTML = p.length ? `<div class="note" style="margin:0"><b>Catatan hasil baca — perlu diperiksa:</b><ul id="ePeringatan" style="margin:6px 0 0;padding-left:18px">
+    ${p.map(t => `<li><span class="e-pr-teks">${esc(t)}</span><button class="btn e-pr-ok">Sudah diperiksa</button></li>`).join("")}</ul></div>` : "";
+  $$("#ePeringatan .e-pr-ok").forEach((b, i) => b.onclick = () => { p.splice(i, 1); tandaiUbah(); isiPeringatan(); });
+}
+function isiBahan() {
+  const tb = $("#eBahan tbody"), B = RS.ed.bahan;
+  tb.innerHTML = B.map((b, i) => `<tr class="${b.perlu_cek && !b.terkonfirmasi ? "cek" : ""}"><td class="no mono">${i + 1}</td>
+    <td><input class="input b-nama" maxlength="200" aria-label="Nama bahan baris ${i + 1}"></td>
+    <td><input class="input b-jasli" maxlength="100" aria-label="Jumlah asli baris ${i + 1}" style="width:120px"></td>
+    <td><input class="input mono b-jumlah" inputmode="decimal" aria-label="Jumlah angka baris ${i + 1}" style="width:110px"></td>
+    <td><input class="input b-satuan" maxlength="50" aria-label="Satuan baris ${i + 1}" style="width:100px"></td>
+    <td><input class="input b-catatan" maxlength="1000" aria-label="Catatan baris ${i + 1}"></td>
+    <td class="cb"><input type="checkbox" class="b-cek" aria-label="Perlu cek baris ${i + 1}"></td>
+    <td class="cb"><input type="checkbox" class="b-konf" aria-label="Sudah dicek baris ${i + 1}"></td>
+    <td><div class="ops"><button class="btn b-naik" aria-label="Naikkan baris ${i + 1}" ${i ? "" : "disabled"}>↑</button><button class="btn b-turun" aria-label="Turunkan baris ${i + 1}" ${i < B.length - 1 ? "" : "disabled"}>↓</button><button class="btn danger b-hapus" aria-label="Hapus baris ${i + 1}">Hapus</button></div></td></tr>`).join("")
+    || `<tr><td colspan="9" class="muted">Belum ada bahan. Tekan + Tambah bahan.</td></tr>`;
+  $$("tr", tb).forEach((tr, i) => {
+    const b = B[i]; if (!b) return;
+    for (const [c, k] of [["b-nama", "nama"], ["b-jasli", "jumlah_asli"], ["b-jumlah", "jumlah"], ["b-satuan", "satuan"], ["b-catatan", "catatan"]]) {
+      const inp = $("." + c, tr); inp.value = b[k]; inp.oninput = () => { b[k] = inp.value; tandaiUbah(); };
+    }
+    for (const [c, k] of [["b-cek", "perlu_cek"], ["b-konf", "terkonfirmasi"]]) {
+      const cb = $("." + c, tr); cb.checked = b[k]; cb.onchange = () => { b[k] = cb.checked; tandaiUbah(); tr.classList.toggle("cek", b.perlu_cek && !b.terkonfirmasi); };
+    }
+    $(".b-naik", tr).onclick = () => { [B[i - 1], B[i]] = [B[i], B[i - 1]]; tandaiUbah(); isiBahan(); };
+    $(".b-turun", tr).onclick = () => { [B[i + 1], B[i]] = [B[i], B[i + 1]]; tandaiUbah(); isiBahan(); };
+    $(".b-hapus", tr).onclick = () => { B.splice(i, 1); tandaiUbah(); isiBahan(); };
+  });
+}
+async function fotoSumber() {
+  const e = RS.ed, box = $("#eFoto"); if (api.demo || !box) return;
+  const up = RS.data?.uploads.find(u => u.id === e.upload_id);
+  if (!up || up.status === "mengunggah") { box.innerHTML = `<div class="thumb">Foto sumber tidak tersedia</div>`; return; }
+  try {
+    const url = await api.resepFotoUrl(up.foto_path);
+    if (RS.ed !== e || !$("#eFoto")) return;
+    if (!url) throw new Error("tidak ada akses");
+    const img = document.createElement("img"); img.id = "eFotoImg"; img.alt = "Foto sumber resep"; img.src = url;
+    img.onclick = () => { const v = document.createElement("div"); v.className = "photo-view"; const big = document.createElement("img"); big.src = url; big.alt = "Foto sumber resep"; v.append(big); v.onclick = () => v.remove(); document.body.append(v); };
+    $("#eFoto").replaceChildren(img);
+  } catch (x) { if ($("#eFoto")) $("#eFoto").innerHTML = `<div class="thumb">Foto sumber tidak dapat dimuat: ${esc(x.message)}</div>`; }
+}
+function bacaAngka(s, label) {   // hanya angka pasti; koma desimal; tidak menebak
+  s = String(s ?? "").trim(); if (!s) return null;
+  let n;
+  if (/^\d+(,\d+)?$/.test(s)) n = Number(s.replace(",", "."));
+  else if (/^\d{1,3}\.\d{3}$/.test(s)) throw new Error(`${label}: "${s}" ambigu (seribu atau desimal?). Tulis 1000, atau gunakan koma untuk desimal (mis. 1,5).`);
+  else if (/^\d+\.\d+$/.test(s)) n = Number(s);
+  else throw new Error(`${label}: "${s}" bukan angka. Jumlah angka diisi angka saja (mis. 1,5) atau biarkan kosong bila tidak pasti.`);
+  if (!isFinite(n) || n >= 1e12) throw new Error(`${label}: angka terlalu besar.`);
+  return n;
+}
+function dataEditor() {
+  const e = RS.ed, t = s => String(s ?? "").trim() || null, bahan = [];
+  e.bahan.forEach((b, i) => {
+    const row = { nama: t(b.nama), jumlah_asli: t(b.jumlah_asli), jumlah: bacaAngka(b.jumlah, `Bahan baris ${i + 1}, jumlah angka`), satuan: t(b.satuan), catatan: t(b.catatan), perlu_cek: !!b.perlu_cek, terkonfirmasi: !!b.terkonfirmasi };
+    if ([row.nama, row.jumlah_asli, row.jumlah, row.satuan, row.catatan].every(v => v == null)) return;   // baris kosong tidak menjadi bahan
+    if (!row.nama) throw new Error(`Bahan baris ${i + 1} belum punya nama. Isi namanya atau kosongkan baris tersebut.`);
+    bahan.push(row);
+  });
+  const data = { nama: t(e.nama), kategori: t(e.kategori), yield_asli: t(e.yield_asli), yield_jumlah: bacaAngka(e.yield_jumlah, "Yield angka"), yield_satuan: t(e.yield_satuan),
+    catatan: t(e.catatan), peringatan: e.peringatan.map(t).filter(Boolean), bahan };
+  if (!data.nama) throw new Error("Nama resep wajib diisi.");
+  if (!bahan.length) throw new Error("Minimal satu bahan bernama wajib diisi.");
+  if (!e.izinkan && (data.peringatan.length || bahan.some(b => b.perlu_cek && !b.terkonfirmasi)))
+    throw new Error('Masih ada catatan belum lengkap (catatan hasil baca atau bahan "Perlu cek" yang belum dicek). Centang "Simpan dengan catatan belum lengkap" untuk tetap menyimpan.');
+  return data;
+}
+async function simpanEditor() {
+  const e = RS.ed; let data;
+  try { data = dataEditor(); } catch (x) { return edPesan(x.message); }
+  const btn = $("#eSimpan"); btn.disabled = true; edPesan("Menyimpan…", "info");
+  try {
+    const r = await api.resepSimpan(e.id, e.revisi, data, e.izinkan);
+    if (RS.ed !== e) return;
+    const i = RS.data.resep.findIndex(x => x.id === r.id); if (i >= 0) RS.data.resep[i] = r;
+    RS.ed = edDari(r); RS.dirty = false; renderEditor();
+    edPesan(api.demo ? "Tersimpan di mode contoh — hilang saat halaman dimuat ulang." : `Resep tersimpan (revisi ${r.revisi}).`, "ok");
+  } catch (x) {
+    const konflik = x.code === "RS409" || /perangkat lain/.test(x.message);
+    edPesan(konflik ? `${x.message}\nPerubahan Anda masih ada di layar ini. Tekan Muat ulang untuk mengambil versi terbaru (perubahan di layar akan diganti).` : "Gagal menyimpan: " + x.message);
+  } finally { if (btn.isConnected) btn.disabled = false; }
+}
+async function muatUlangEditor() {
+  if (RS.dirty && !confirm("Muat ulang akan mengganti perubahan yang belum disimpan dengan versi terbaru dari server. Lanjutkan?")) return;
+  const id = RS.ed.id; await muatResep();
+  const r = RS.data?.resep.find(x => x.id === id);
+  if (!r) return edPesan(RS.err ? "Gagal memuat: " + RS.err.message : "Resep tidak ditemukan.");
+  RS.ed = edDari(r); RS.dirty = false; renderEditor(); edPesan(`Versi terbaru dimuat (revisi ${r.revisi}).`, "info");
+}
+
+/* ---- ekspor Excel: satu snapshot RPC seluruh resep tersimpan → ExcelJS di browser ---- */
+let excelJsP = null;
+function muatExcelJS() {
+  if (window.ExcelJS?.Workbook) return Promise.resolve(window.ExcelJS);
+  return excelJsP ??= new Promise((res, rej) => {
+    const gagal = () => rej(new Error("Library Excel (ExcelJS 4.4.0) gagal dimuat. Periksa koneksi internet lalu coba lagi. File tidak dibuat."));
+    const s = document.createElement("script"); s.src = EXCELJS_SRC; s.integrity = EXCELJS_SRI; s.crossOrigin = "anonymous";
+    const t = setTimeout(gagal, 30000);
+    s.onload = () => { clearTimeout(t); window.ExcelJS?.Workbook ? res(window.ExcelJS) : gagal(); };
+    s.onerror = () => { clearTimeout(t); s.remove(); gagal(); };
+    document.head.append(s);
+  }).catch(e => { excelJsP = null; throw e; });
+}
+function buildResepWorkbook(snap, ExcelJS) {
+  const wb = new ExcelJS.Workbook(); wb.creator = "Harga Beli Bakmi Kelinci"; wb.created = new Date();
+  const teks = v => v == null || v === "" ? null : String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, "");   // tetap string, tidak pernah formula
+  const num = v => v == null || v === "" ? null : Number(v);
+  const sheet = (nama, kolom, wrap) => {
+    const ws = wb.addWorksheet(nama, { views: [{ state: "frozen", xSplit: 0, ySplit: 1, topLeftCell: "A2", activeCell: "A2" }],
+      pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: "1:1",
+        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } } });
+    ws.columns = kolom.map(([header, width]) => ({ header, width }));
+    ws.getRow(1).eachCell(c => { c.font = { bold: true }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFECEEE9" } }; c.alignment = { vertical: "middle", wrapText: true }; });
+    ws.tambah = vals => { const row = ws.addRow(vals); for (let i = 1; i <= kolom.length; i++) row.getCell(i).alignment = { vertical: "top", wrapText: wrap.includes(i) }; };
+    return ws;
+  };
+  const daftar = sheet("Daftar Resep", [["ID Resep", 38], ["Nama Resep", 32], ["Kategori", 18], ["Yield Asli", 16], ["Yield Angka", 12], ["Satuan Yield", 13],
+    ["Jumlah Bahan", 13], ["Catatan", 42], ["Perlu Cek", 30], ["Diperbarui (WIB)", 18]], [2, 8, 9]);
+  const komp = sheet("Komposisi Bahan", [["ID Resep", 38], ["Nama Resep", 30], ["Kategori", 16], ["No. Bahan", 10], ["Nama Bahan", 32], ["Jumlah Asli", 14],
+    ["Jumlah Angka", 14], ["Satuan", 12], ["Catatan Bahan", 36], ["Perlu Cek", 13]], [2, 5, 9]);
+  for (const r of snap.resep) {   // urutan dari server: nama resep, ID; bahan per nomor urut
+    daftar.tambah([r.id, teks(r.nama), teks(r.kategori), teks(r.yield_asli), num(r.yield_jumlah), teks(r.yield_satuan), r.bahan.length, teks(r.catatan),
+      r.catatan_belum_lengkap ? teks(["Ya", ...(r.peringatan ?? [])].join(" — ")) : "Tidak", wibTeks(r.updated_at)]);
+    for (const b of r.bahan) komp.tambah([r.id, teks(r.nama), teks(r.kategori), b.urutan, teks(b.nama), teks(b.jumlah_asli), num(b.jumlah), teks(b.satuan), teks(b.catatan),
+      b.perlu_cek ? (b.terkonfirmasi ? "Sudah dicek" : "Ya") : "Tidak"]);
+  }
+  for (const ws of [daftar, komp]) { ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: ws.rowCount, column: 10 } }; delete ws.tambah; }
+  return wb;
+}
+async function eksporResep() {
+  resepPesan("Mengambil seluruh resep tersimpan…", "info");
+  let snap;
+  try { snap = await api.resepSnapshot(); } catch (e) { return resepPesan(skemaHilang(e) ? PESAN_SKEMA : "Ekspor gagal: " + e.message); }
+  const resep = snap?.resep ?? [], nb = resep.reduce((n, r) => n + r.bahan.length, 0);
+  if (!resep.length) return resepPesan("Belum ada resep tersimpan untuk diekspor. Simpan minimal satu resep dari draft terlebih dahulu (draft tidak ikut ekspor).", "info");
+  if (resep.length !== Number(snap.jumlah_resep) || nb !== Number(snap.jumlah_bahan)) return resepPesan("Ekspor dibatalkan: jumlah data dari server tidak konsisten. Coba lagi.");
+  resepPesan("");
+  const d = drawer(`<div class="dh"><div><div class="muted" style="font-size:12px">Ekspor Excel</div><h2>Database resep</h2></div><button class="btn ghost" data-close aria-label="Tutup">✕</button></div>
+    <div class="db" id="xDialog"><p id="xInfo" style="margin:0;font-size:15px"><b>${fmtN(resep.length)} resep</b> · <b>${fmtN(nb)} bahan</b><br>
+      Seluruh resep tersimpan lokasi ${esc(snap.lokasi ?? cfg.LOKASI)} — tidak terpengaruh pencarian. Draft dan foto tidak ikut.</p>
+      <div class="hint">Dua sheet: Daftar Resep dan Komposisi Bahan. File dibuat di browser ini (tidak dikirim ke layanan lain).</div></div>
+    <div class="df"><button class="btn" data-close id="xBatal">Batal</button><button class="btn primary" id="xUnduh">Unduh .xlsx</button></div>`);
+  $("#xUnduh", d).onclick = async ev => {
+    ev.target.disabled = true; ev.target.textContent = "Membuat file…";
+    try {
+      const wb = buildResepWorkbook(snap, await muatExcelJS());
+      const blob = new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const w = wibTeks(Date.now()), nama = `Database_Resep_Bakmi_Kelinci_${w.slice(0, 10)}_${w.slice(11, 13)}${w.slice(14, 16)}.xlsx`;
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nama; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      tutupDrawer(); resepPesan(`File ${nama} dibuat: ${fmtN(resep.length)} resep, ${fmtN(nb)} bahan.`, "ok");
+    } catch (e) { tutupDrawer(); resepPesan(e.message); }
+  };
 }
 
 /* ===================== PENGATURAN ===================== */
