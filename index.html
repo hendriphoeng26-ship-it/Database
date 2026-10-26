@@ -180,6 +180,14 @@ code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px
 .r-drafts{display:flex;flex-wrap:wrap;gap:8px}
 .r-draft{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 12px;font-size:14px;max-width:100%}
 .r-draft>span{min-width:0;overflow-wrap:anywhere}
+.r-antri{padding:12px 14px;display:grid;gap:8px;margin-bottom:14px}
+.r-antri-ringkas{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+.r-antri-judul{font-weight:600;font-size:15px}
+.r-antri-list{display:grid;gap:6px;list-style:none;margin:0;padding:0}
+.r-antri-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;font-size:14px;border-top:1px solid var(--line);padding-top:6px}
+.r-antri-nama{min-width:0;overflow-wrap:anywhere}
+.r-antri-pesan,.r-antri-baca{grid-column:2;font-size:13px;white-space:pre-line;overflow-wrap:anywhere}
+.r-antri-pesan.err{color:var(--bad)}
 #rTersimpan td{font-size:14px}
 #rTersimpan td.nama{overflow-wrap:anywhere}
 #rEditor{padding:16px;display:grid;gap:14px}
@@ -242,7 +250,7 @@ code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px
 <datalist id="dlProduk"></datalist>
 <input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
 <input type="file" id="fileBon" accept="image/*,application/pdf" hidden>
-<input type="file" id="fileResep" accept="image/jpeg,image/png,image/webp" hidden>
+<input type="file" id="fileResep" accept="image/jpeg,image/png,image/webp" multiple hidden>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -695,7 +703,8 @@ const RESEP_POLL_MS = 5000, RESEP_MAKS = 10 * 1024 * 1024;
 const EXCELJS_SRC = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 const EXCELJS_SRI = "sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz";
 const STATUS_UPLOAD = { mengunggah: ["Belum lengkap terunggah", "p-warn"], antre: ["Menunggu pemroses lokal", "p-warn"], memproses: ["Sedang dibaca", "p-info"], gagal: ["Gagal", "p-bad"] };
-const RS = { data: null, err: null, q: "", ed: null, dirty: false, timer: null, seq: 0, uid: null, resumeId: null, busy: false };
+const STATUS_ANTRI = { menunggu: ["Menunggu giliran", "p-mute"], proses: ["Sedang diunggah", "p-info"], terkirim: ["Terkirim", "p-ok"], ada: ["Sudah ada", "p-info"], ditolak: ["Tidak diproses", "p-bad"], gagal: ["Gagal", "p-bad"] };
+const RS = { data: null, err: null, q: "", ed: null, dirty: false, timer: null, seq: 0, uid: null, resumeId: null, busy: false, antri: null, antriJalan: false, antriUid: undefined, akunBerubah: false };
 const fmtN = n => Number(n).toLocaleString("id-ID");
 const angkaTeks = n => n == null ? "" : Number(n).toLocaleString("id-ID", { useGrouping: false, maximumFractionDigits: 20 });
 const wibTeks = d => { const s = new Date(new Date(d).getTime() + 7 * 36e5).toISOString(); return s.slice(0, 10) + " " + s.slice(11, 16); };   // WIB = UTC+7, tanpa DST
@@ -703,7 +712,16 @@ const skemaHilang = e => ["PGRST202", "PGRST205", "42883", "42P01"].includes(e?.
 const PESAN_SKEMA = "Fitur Resep belum aktif di database ini. Administrator perlu menjalankan migration supabase/03_resep.sql di Supabase → SQL Editor, lalu muat ulang halaman. Menu Produk, Bon, Riwayat, dan Pengaturan tetap bisa dipakai.";
 
 function resepBolehTinggal() { return !RS.dirty || confirm("Perubahan resep belum disimpan. Tinggalkan tanpa menyimpan?"); }
-window.addEventListener("beforeunload", e => { if (RS.dirty) { e.preventDefault(); e.returnValue = ""; } });
+const antriTertunda = () => RS.busy || !!RS.antri?.some(it => ["menunggu", "proses", "gagal"].includes(it.status));
+window.addEventListener("beforeunload", e => { if (RS.dirty || antriTertunda()) { e.preventDefault(); e.returnValue = ""; } });
+// Keluar / ubah koneksi memuat ulang halaman: ditolak selama ada unggahan berjalan (signOut di tengah transfer membuatnya gagal).
+const tungguUnggah = () => RS.busy && (toast("Unggahan foto resep sedang berjalan. Tunggu sampai selesai sebelum keluar atau mengubah koneksi.", true), true);
+// File gagal hanya diingat di tab ini: membuangnya perlu persetujuan.
+function bolehBuangAntri() {
+  const n = RS.antri?.filter(it => it.status === "gagal" || it.status === "menunggu").length;
+  if (n && !confirm(`Antrean unggah masih punya ${n} file gagal yang belum terkirim. Jika dibuang, file itu harus dipilih ulang. Buang antrean ini?`)) return false;
+  RS.antri = null; renderAntrian(); return true;
+}
 function berhentiPoll() { clearTimeout(RS.timer); RS.timer = null; }
 function jadwalPoll() {   // status dimuat ulang tiap 5 detik hanya saat tab Resep aktif, halaman terlihat, dan login
   berhentiPoll();
@@ -724,6 +742,7 @@ async function muatResep() {
     RS.data = d; RS.err = null;
   } catch (e) { if (seq !== RS.seq) return; RS.err = e; }
   if (S.view !== "resep") return;
+  renderAntrian();
   if (!RS.ed) renderDaftar();
   jadwalPoll();
 }
@@ -735,13 +754,15 @@ function resepPesan(teks, jenis = "err") {
 function viewResep(el) {
   el.innerHTML = `<div id="resepView">
     <div class="toolbar"><div class="grow"><h2 style="font-size:22px">Resep</h2><div class="muted" style="font-size:14px">Upload foto resep, periksa hasil baca, lalu simpan. Ekspor Excel memuat seluruh resep tersimpan (draft tidak ikut).</div></div>
-      <button class="btn primary" id="rUpload" ${api.demo ? 'disabled title="Upload dan pembacaan AI butuh koneksi Supabase"' : ""}>Upload Foto</button>
+      <button class="btn primary" id="rUpload" ${api.demo ? 'disabled title="Upload dan pembacaan AI butuh koneksi Supabase"' : RS.busy ? "disabled" : ""}>Upload Foto</button>
       <button class="btn" id="rEkspor">Ekspor Excel</button></div>
     ${api.demo ? `<div class="r-msg info" id="rDemo"><b>Mode contoh:</b> resep di bawah hanya contoh dan tidak tersimpan — perubahan hilang saat halaman dimuat ulang. Upload foto dan pembacaan AI nonaktif sampai terhubung ke Supabase.</div>` : ""}
     <div id="rPesan" role="status" aria-live="polite"></div>
+    <div id="rAntrian"></div>
     <div id="rIsi"></div></div>`;
-  $("#rUpload").onclick = () => { if (api.demo) return; RS.resumeId = null; $("#fileResep").click(); };
+  $("#rUpload").onclick = () => { if (api.demo) return; RS.resumeId = null; $("#fileResep").multiple = true; $("#fileResep").click(); };
   $("#rEkspor").onclick = eksporResep;
+  renderAntrian();
   if (RS.ed) renderEditor(); else renderDaftar();
   muatResep();
 }
@@ -808,7 +829,7 @@ function isiDaftarResep() {
 
   $$("#rUploads .r-buka").forEach(b => b.onclick = () => bukaEditor(b.closest(".r-draft").dataset.id));
   $$("#rUploads .r-retry").forEach(b => b.onclick = () => cobaLagiResep(b.closest(".r-upload").dataset.id, b));
-  $$("#rUploads .r-lanjut").forEach(b => b.onclick = () => { RS.resumeId = b.closest(".r-upload").dataset.id; $("#fileResep").click(); });
+  $$("#rUploads .r-lanjut").forEach(b => b.onclick = () => { RS.resumeId = b.closest(".r-upload").dataset.id; $("#fileResep").multiple = false; $("#fileResep").click(); });
   $$("#rTersimpan tr.r-resep").forEach(tr => tr.onclick = () => bukaEditor(tr.dataset.id));
 }
 async function cobaLagiResep(id, btn) {
@@ -826,41 +847,137 @@ function jenisGambar(b) {
   if (s(0, 4) === "RIFF" && s(8, 4) === "WEBP") return "image/webp";
   return null;
 }
-$("#fileResep").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) unggahResep(f); };
-async function unggahResep(file) {
-  const target = RS.resumeId; RS.resumeId = null;
+$("#fileResep").onchange = e => {
+  const files = [...e.target.files], target = RS.resumeId; RS.resumeId = null; e.target.value = "";
+  if (files.length > 1) unggahBanyak(files); else if (files.length) unggahResep(files[0], target);
+};
+function kunciUpload(on) { RS.busy = on; $("#rUpload") && ($("#rUpload").disabled = on || api.demo); renderAntrian(); }
+// Satu foto (termasuk melanjutkan unggahan tertentu): hasil tampil di #rPesan.
+async function unggahResep(file, target = null) {
   if (api.demo) return resepPesan("Mode contoh: upload foto dan pembacaan AI nonaktif.");
   if (RS.busy) return resepPesan("Tunggu unggahan sebelumnya selesai.", "info");
-  if (!file.size) return resepPesan(`File "${file.name}" kosong.`);
-  if (file.size > RESEP_MAKS) return resepPesan(`File "${file.name}" terlalu besar (${(file.size / 1048576).toLocaleString("id-ID", { maximumFractionDigits: 1 })} MiB). Maksimal 10 MiB per foto.`);
-  RS.busy = true; $("#rUpload") && ($("#rUpload").disabled = true);
+  kunciUpload(true);
   try {
-    const bytes = await file.arrayBuffer(), mime = jenisGambar(new Uint8Array(bytes, 0, Math.min(12, bytes.byteLength)));
-    if (!mime) return resepPesan(`Format "${file.name}" tidak didukung. Pilih foto JPEG, PNG, atau WebP (diperiksa dari isi file, bukan nama). Format lain tidak dikonversi otomatis.`);
-    resepPesan("Menyiapkan unggahan…", "info");
-    const sha = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(x => x.toString(16).padStart(2, "0")).join("");
-    const tj = target && RS.data?.uploads.find(u => u.id === target);
-    if (tj && tj.sha256 !== sha) return resepPesan(`File "${file.name}" berbeda dari unggahan "${tj.nama_file || "foto"}" yang ingin dilanjutkan. Pilih file yang sama persis.`);
-    const r = await api.resepReservasi({ id: crypto.randomUUID(), sha256: sha, mime, ukuran: file.size, nama: file.name });
-    const u = r.upload;
-    if (u.status !== "mengunggah") {
-      return resepPesan(`Foto ini sudah pernah diunggah ("${u.nama_file || "foto"}", status: ${labelUpload(u, (RS.data?.resep ?? []).filter(x => x.upload_id === u.id))[0]}). Unggahan yang ada dipakai; tidak dibuat unggahan atau resep ganda.`, "info");
-    }
-    if (!r.milik_sendiri) {
-      return resepPesan(`File yang sama sudah direservasi oleh ${r.pemilik_email || "akun lain"} tetapi fotonya belum lengkap. Minta pengunggah tersebut melanjutkan unggahan dari perangkatnya; kepemilikan dan foto tidak dipindahkan atau ditimpa.`);
-    }
-    resepPesan(r.baru ? "Mengunggah foto…" : "Melanjutkan unggahan yang belum lengkap…", "info");
-    try { await api.resepKirimFoto(u.foto_path, bytes, mime); }
-    catch (e) { return resepPesan(`Upload foto gagal (${e.message}). Unggahan dicatat sebagai belum lengkap — pilih file yang sama lagi untuk melanjutkan; tidak akan dobel.`); }
-    try { await api.resepKonfirmasi(u.id); }
-    catch (e) { return resepPesan(`Konfirmasi foto gagal (${e.message}). Pilih file yang sama lagi untuk melanjutkan.`); }
-    resepPesan(`Foto "${file.name}" tersimpan. Status: Menunggu pemroses lokal.`, "ok");
-  } catch (e) {
-    resepPesan(skemaHilang(e) ? PESAN_SKEMA : "Upload gagal: " + e.message);
+    const h = await prosesFoto({ nama: file.name, file, target }, resepPesan);
+    resepPesan(h.message, h.jenis);
+    return h;
   } finally {
-    RS.busy = false; $("#rUpload") && ($("#rUpload").disabled = api.demo);
+    kunciUpload(false);
     await muatResep();
   }
+}
+const PESAN_AKUN = "Akun login berubah di tab lain saat antrean berjalan. Antrean dihentikan supaya foto tidak tercatat atas akun lain; masuk lagi sebagai akun semula lalu pilih ulang foto yang belum terkirim.";
+const AKUN_BERUBAH = Symbol("akun berubah");
+// Satu file dari awal sampai konfirmasi. Tidak pernah melempar: hasil { status, message, jenis, akun? }, status = terkirim | ada | ditolak | gagal.
+// Byte dibaca dari it.file di setiap percobaan dan tidak disimpan; File yang gagal dibaca ulang saat Coba lagi.
+// uid (antrean): akun saat antrean dimulai, dicek lagi sebelum setiap penulisan ke server.
+async function prosesFoto(it, lapor, uid) {
+  const ditolak = message => ({ status: "ditolak", message, jenis: "err" }), gagal = message => ({ status: "gagal", message, jenis: "err" });
+  const kosong = () => ditolak(`File "${it.nama}" kosong.`);
+  const besar = n => ditolak(`File "${it.nama}" terlalu besar (${(n / 1048576).toLocaleString("id-ID", { maximumFractionDigits: 1 })} MiB). Maksimal 10 MiB per foto.`);
+  const cekAkun = async () => { if (uid !== undefined && await api.resepUid() !== uid) throw AKUN_BERUBAH; };
+  if (!it.file.size) return kosong();
+  if (it.file.size > RESEP_MAKS) return besar(it.file.size);   // sebelum dibaca: file raksasa tidak dimuat ke memori
+  const tj = it.target && RS.data?.uploads.find(u => u.id === it.target);
+  if (it.target && !tj) return ditolak("Data unggahan yang ingin dilanjutkan belum termuat, jadi file tidak bisa dicocokkan. Tunggu daftar termuat lalu tekan Lanjutkan unggah lagi; tidak ada yang diunggah.");
+  let bytes;
+  try { bytes = await it.file.arrayBuffer(); }
+  catch (e) { return gagal(`File "${it.nama}" tidak bisa dibaca (${e.message}). Coba lagi, atau pilih file itu lagi.`); }
+  if (!bytes.byteLength) return kosong();
+  if (bytes.byteLength > RESEP_MAKS) return besar(bytes.byteLength);   // file bisa berubah setelah dipilih
+  try {
+    const mime = jenisGambar(new Uint8Array(bytes, 0, Math.min(12, bytes.byteLength)));
+    if (!mime) return ditolak(`Format "${it.nama}" tidak didukung. Pilih foto JPEG, PNG, atau WebP (diperiksa dari isi file, bukan nama). Format lain tidak dikonversi otomatis.`);
+    lapor("Menyiapkan unggahan…", "info");
+    const sha = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(x => x.toString(16).padStart(2, "0")).join("");
+    if (tj && tj.sha256 !== sha) return ditolak(`File "${it.nama}" berbeda dari unggahan "${tj.nama_file || "foto"}" yang ingin dilanjutkan. Pilih file yang sama persis.`);
+    await cekAkun();
+    const r = await api.resepReservasi({ id: crypto.randomUUID(), sha256: sha, mime, ukuran: bytes.byteLength, nama: it.nama });
+    const u = r.upload; it.uploadId = u.id;
+    if (u.status !== "mengunggah") {
+      return { status: "ada", jenis: "info", message: `Foto ini sudah pernah diunggah ("${u.nama_file || "foto"}", status: ${labelUpload(u, (RS.data?.resep ?? []).filter(x => x.upload_id === u.id))[0]}). Unggahan yang ada dipakai; tidak dibuat unggahan atau resep ganda.` };
+    }
+    if (!r.milik_sendiri) {
+      return ditolak(`File yang sama sudah direservasi oleh ${r.pemilik_email || "akun lain"} tetapi fotonya belum lengkap. Minta pengunggah tersebut melanjutkan unggahan dari perangkatnya; kepemilikan dan foto tidak dipindahkan atau ditimpa.`);
+    }
+    lapor(r.baru ? "Mengunggah foto…" : "Melanjutkan unggahan yang belum lengkap…", "info");
+    await cekAkun();
+    try { await api.resepKirimFoto(u.foto_path, bytes, mime); }
+    catch (e) { return gagal(`Upload foto gagal (${e.message}). Unggahan dicatat sebagai belum lengkap — pilih file yang sama lagi untuk melanjutkan; tidak akan dobel.`); }
+    await cekAkun();
+    try { await api.resepKonfirmasi(u.id); }
+    catch (e) { return gagal(`Konfirmasi foto gagal (${e.message}). Pilih file yang sama lagi untuk melanjutkan.`); }
+    return { status: "terkirim", jenis: "ok", message: `Foto "${it.nama}" tersimpan. Status: Menunggu pemroses lokal.` };
+  } catch (e) {
+    if (e === AKUN_BERUBAH) return { ...gagal(PESAN_AKUN), akun: true };
+    return gagal(skemaHilang(e) ? PESAN_SKEMA : "Upload gagal: " + e.message);
+  }
+}
+
+/* ---- banyak foto: antrean di memori tab ini, diproses satu per satu ---- */
+async function unggahBanyak(files) {
+  if (api.demo) return resepPesan("Mode contoh: upload foto dan pembacaan AI nonaktif.");
+  if (RS.busy) return resepPesan("Tunggu antrean unggah selesai sebelum memilih foto lain.", "info");
+  if (!bolehBuangAntri()) return;
+  RS.antri = files.map(f => ({ nama: f.name, file: f, status: "menunggu", pesan: "", uploadId: null }));
+  RS.antriUid = undefined; RS.akunBerubah = false;
+  await jalankanAntrian();
+}
+function hitungAntri() {
+  const n = { terkirim: 0, ada: 0, ditolak: 0, gagal: 0, menunggu: 0 };
+  for (const it of RS.antri ?? []) n[it.status === "proses" ? "menunggu" : it.status]++;
+  return n;
+}
+async function jalankanAntrian() {   // gagal di satu file (validasi, jaringan, RPC, muat ulang daftar) tidak menghentikan file berikutnya
+  if (RS.busy || !RS.antri) return;
+  RS.antriJalan = true; kunciUpload(true); resepPesan("");
+  try {
+    if (RS.antriUid === undefined) RS.antriUid = await api.resepUid();   // dibekukan untuk seluruh antrean, termasuk Coba lagi
+    for (const it of RS.antri) {
+      if (it.status !== "menunggu") continue;
+      try {
+        if (!RS.akunBerubah && await api.resepUid() !== RS.antriUid) RS.akunBerubah = true;
+        if (RS.akunBerubah) { it.status = "gagal"; it.pesan = PESAN_AKUN; it.file = null; continue; }
+        it.status = "proses"; it.pesan = ""; renderAntrian();
+        const h = await prosesFoto(it, teks => { it.pesan = teks; renderAntrian(); }, RS.antriUid);
+        it.status = h.status; it.pesan = h.message;
+        if (h.akun) RS.akunBerubah = true;
+        if (h.status !== "gagal" || h.akun) it.file = null;   // File hanya disimpan untuk Coba lagi
+      } catch (e) { it.status = "gagal"; it.pesan = "Upload gagal: " + e.message; }
+      renderAntrian();
+      await muatResep().catch(() => {});
+    }
+  } finally { RS.antriJalan = false; kunciUpload(false); }
+  const n = hitungAntri();
+  resepPesan(RS.akunBerubah ? `${PESAN_AKUN} ${n.terkirim} terkirim, ${n.ada} sudah ada, ${n.ditolak} tidak diproses, ${n.gagal} dihentikan/gagal.`
+    : `Antrean selesai: ${n.terkirim} terkirim, ${n.ada} sudah ada, ${n.ditolak} tidak diproses, ${n.gagal} gagal.${n.gagal ? " Tekan “Coba lagi yang gagal” untuk mengirim ulang tanpa memilih file lagi." : ""}`, n.gagal || n.ditolak ? "err" : "ok");
+}
+function ulangiGagal() {
+  if (RS.busy || !RS.antri) return;
+  if (RS.akunBerubah) return resepPesan(PESAN_AKUN);
+  RS.antri.forEach(it => { if (it.status === "gagal") { it.status = "menunggu"; it.pesan = ""; } });
+  jalankanAntrian();
+}
+function renderAntrian() {
+  const el = $("#rAntrian"); if (!el) return;
+  const A = RS.antri; if (!A) { el.innerHTML = ""; return; }
+  const n = hitungAntri(), jalan = RS.antriJalan ? 1 : 0, kunci = RS.busy ? " disabled" : "";
+  el.innerHTML = `<div class="panel r-antri">
+    <div class="r-antri-ringkas" data-jalan="${jalan}" data-total="${A.length}" data-terkirim="${n.terkirim}" data-ada="${n.ada}" data-ditolak="${n.ditolak}" data-gagal="${n.gagal}" data-menunggu="${n.menunggu}">
+      <span class="r-antri-judul">Antrean unggah: ${A.length} file${jalan ? " — sedang berjalan" : ""}</span>
+      <span class="muted">${n.terkirim} terkirim · ${n.ada} sudah ada · ${n.ditolak} tidak diproses · ${n.gagal} gagal · ${n.menunggu} menunggu</span>
+      ${!jalan && n.gagal && !RS.akunBerubah ? `<button class="btn primary" id="rUlangi"${kunci}>Coba lagi yang gagal (${n.gagal})</button>` : ""}
+      ${jalan ? "" : `<button class="btn" id="rAntriTutup"${kunci}>Tutup</button>`}</div>
+    <ol class="r-antri-list">${A.map(it => {
+      const [label, cls] = STATUS_ANTRI[it.status], u = it.uploadId && RS.data?.uploads.find(x => x.id === it.uploadId);
+      const baca = u ? labelUpload(u, RS.data.resep.filter(r => r.upload_id === u.id))[0] : "belum termuat";
+      return `<li class="r-antri-item" data-status="${it.status}"><span class="pill ${cls} r-antri-status">${label}</span><span class="r-antri-nama">${esc(it.nama || "Foto tanpa nama")}</span>
+        ${it.pesan && it.status !== "terkirim" ? `<div class="r-antri-pesan ${it.status === "gagal" || it.status === "ditolak" ? "err" : ""}">${esc(it.pesan)}</div>` : ""}
+        ${it.status === "terkirim" || it.status === "ada" ? `<div class="r-antri-baca muted">Status baca: ${esc(baca)}</div>` : ""}</li>`;
+    }).join("")}</ol>
+    <div class="muted" style="font-size:13px">Antrean dan file yang gagal hanya diingat di tab ini (dibaca ulang dari file saat Coba lagi). Jangan tutup atau muat ulang halaman sampai antrean selesai. Terkirim berarti foto sudah aman di server; hasil baca muncul setelah pemroses lokal di Mac membacanya dan tetap berupa draft sampai diperiksa dan disimpan.</div></div>`;
+  $("#rUlangi") && ($("#rUlangi").onclick = ulangiGagal);
+  $("#rAntriTutup") && ($("#rAntriTutup").onclick = () => { if (!RS.busy) bolehBuangAntri(); });
 }
 
 /* ---- editor draft / resep ---- */
@@ -1101,9 +1218,9 @@ async function viewAtur(el) {
       <div class="toolbar" style="margin:0"><input class="input mono" id="aId" placeholder="Chat ID, mis. 123456789" style="max-width:220px" inputmode="numeric"><input class="input" id="aNama" placeholder="Nama, mis. Admin CK" style="max-width:240px"><button class="btn primary" id="aAdd">Tambah</button></div>
       <div class="scroll"><table><thead><tr><th>Chat ID</th><th>Nama</th><th>Status</th><th></th></tr></thead><tbody id="aTb"></tbody></table></div></section>
   </div>`;
-  $("#cSave").onclick = () => { store.set("bk_harga_cfg", { SUPABASE_URL: $("#cUrl").value.trim(), ANON_KEY: $("#cKey").value.trim(), LOKASI: $("#cLok").value.trim() || "CK - N1", FUNCTION: $("#cFn").value.trim() || "bon-bot" }); location.reload(); };
-  $("#cReset").onclick = () => { store.set("bk_harga_cfg", {}); location.reload(); };
-  if ($("#bOut")) $("#bOut").onclick = async () => { await api.logout(); location.reload(); };
+  $("#cSave").onclick = () => { if (tungguUnggah() || !bolehBuangAntri()) return; store.set("bk_harga_cfg", { SUPABASE_URL: $("#cUrl").value.trim(), ANON_KEY: $("#cKey").value.trim(), LOKASI: $("#cLok").value.trim() || "CK - N1", FUNCTION: $("#cFn").value.trim() || "bon-bot" }); location.reload(); };
+  $("#cReset").onclick = () => { if (tungguUnggah() || !bolehBuangAntri()) return; store.set("bk_harga_cfg", {}); location.reload(); };
+  if ($("#bOut")) $("#bOut").onclick = async () => { if (tungguUnggah() || !bolehBuangAntri()) return; await api.logout(); location.reload(); };
   const isi = async () => { const a = await api.akses();
     $("#aTb").innerHTML = a.map(x => `<tr data-id="${x.chat_id}"><td class="mono">${x.chat_id}</td><td>${esc(x.nama ?? "")}</td>
       <td><span class="pill ${x.aktif ? "p-ok" : "p-mute"}">${x.aktif ? "Aktif" : "Nonaktif"}</span></td>
